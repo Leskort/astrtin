@@ -15,23 +15,14 @@ export async function uploadPhoto(buffer: Buffer, fileName: string, mimeType: st
     NODE_ENV: process.env.NODE_ENV,
     NETLIFY: process.env.NETLIFY,
     NETLIFY_DEV: process.env.NETLIFY_DEV,
+    NETLIFY_CONTEXT: process.env.NETLIFY_CONTEXT,
+    CONTEXT: process.env.CONTEXT,
   });
-  console.log('Netlify Blobs configured:', isNetlifyConfigured());
   
-  // Используем только Netlify Blobs
-  if (!isNetlifyConfigured()) {
-    const errorMsg = 'Netlify Blobs не настроен. Убедитесь, что приложение развернуто на Netlify и Netlify Blobs доступен.';
-    console.error('=== Storage error ===');
-    console.error(errorMsg);
-    console.error('Environment variables:', {
-      NETLIFY: process.env.NETLIFY,
-      NETLIFY_DEV: process.env.NETLIFY_DEV,
-    });
-    throw new Error(errorMsg);
-  }
-  
+  // Пробуем использовать Netlify Blobs в любом случае
+  // Если он не доступен, получим ошибку при попытке использования
   try {
-    console.log('Uploading to Netlify Blobs...');
+    console.log('Attempting to upload to Netlify Blobs...');
     const result = await uploadToNetlify(buffer, fileName, mimeType);
     console.log('Netlify Blobs upload successful:', result.url);
     return result;
@@ -40,8 +31,17 @@ export async function uploadPhoto(buffer: Buffer, fileName: string, mimeType: st
     console.error('Error details:', {
       message: error?.message,
       code: error?.code,
+      name: error?.name,
       stack: error?.stack,
     });
+    
+    // Проверяем, может быть это ошибка конфигурации
+    if (error?.message?.includes('getStore') || error?.message?.includes('not available')) {
+      const errorMsg = 'Netlify Blobs не доступен. Убедитесь, что приложение развернуто на Netlify и пакет @netlify/blobs установлен.';
+      console.error('=== Configuration error ===');
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
     
     const errorMsg = error?.message || 'Ошибка сохранения в Netlify Blobs. Попробуйте еще раз или обратитесь к администратору.';
     throw new Error(errorMsg);
