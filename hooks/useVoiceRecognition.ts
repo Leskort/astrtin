@@ -70,7 +70,10 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
   // Получаем кодовое слово из переменных окружения
   const getVoiceCode = useCallback(() => {
     if (typeof window !== 'undefined') {
-      return (process.env.NEXT_PUBLIC_VOICE_CODE || 'tron').toLowerCase().trim();
+      // Пробуем получить из переменных окружения или используем значение по умолчанию
+      const code = process.env.NEXT_PUBLIC_VOICE_CODE || 'tron';
+      console.log('Кодовое слово из env:', code);
+      return code.toLowerCase().trim();
     }
     return 'tron';
   }, []);
@@ -84,6 +87,11 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
 
   const voiceCode = getVoiceCode();
   const language = getLanguage();
+  
+  // Логируем для отладки
+  useEffect(() => {
+    console.log('Настройки распознавания:', { voiceCode, language });
+  }, [voiceCode, language]);
 
   // Проверка поддержки браузера
   const checkBrowserSupport = useCallback(() => {
@@ -172,21 +180,39 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const currentTranscript = Array.from(event.results)
-        .map((result) => result[0].transcript)
-        .join(' ')
-        .toLowerCase()
-        .trim();
-
+      let fullTranscript = '';
+      
+      // Собираем все результаты
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result[0]) {
+          fullTranscript += result[0].transcript + ' ';
+        }
+      }
+      
+      const currentTranscript = fullTranscript.toLowerCase().trim();
       setTranscript(currentTranscript);
 
+      // Логируем для отладки
+      console.log('Распознано:', currentTranscript);
+      console.log('Ищем слово:', voiceCode);
+      console.log('Содержит?', currentTranscript.includes(voiceCode));
+
       // Проверяем наличие кодового слова в текущем транскрипте
-      if (currentTranscript.includes(voiceCode)) {
+      // Проверяем как полное слово, так и часть текста
+      const words = currentTranscript.split(/\s+/);
+      const found = words.some(word => word.includes(voiceCode)) || currentTranscript.includes(voiceCode);
+      
+      if (found) {
+        console.log('Кодовое слово найдено! Переход...');
         hasSuccessRef.current = true;
         recognition.stop();
         setIsListening(false);
         setError(null);
-        onSuccess?.();
+        // Небольшая задержка перед переходом для надежности
+        setTimeout(() => {
+          onSuccess?.();
+        }, 100);
       }
     };
 

@@ -7,22 +7,33 @@ import Button from '@/components/ui/Button';
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
+  const [found, setFound] = useState(false);
   const router = useRouter();
 
   const handleSuccess = async () => {
+    console.log('handleSuccess вызван');
+    setFound(true);
+    
+    // Небольшая задержка для визуальной обратной связи
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     // Проверяем наличие активной сессии
     try {
       const response = await fetch('/api/auth/session');
       const session = await response.json();
+      console.log('Session:', session);
       
       if (session?.user) {
         // Если сессия активна - переходим в галерею
+        console.log('Переход в галерею');
         router.push('/gallery');
       } else {
         // Если сессии нет - переходим на логин
+        console.log('Переход на логин');
         router.push('/login');
       }
     } catch (error) {
+      console.error('Ошибка при проверке сессии:', error);
       // В случае ошибки переходим на логин
       router.push('/login');
     }
@@ -52,8 +63,20 @@ export default function HomePage() {
           astrinn
         </h1>
         
+        {/* Индикатор успешного распознавания */}
+        {found && (
+          <div className="mb-6 animate-pulse">
+            <p className="text-[var(--matrix-green-bright)] font-mono text-lg text-glow-strong mb-2">
+              ✓ РАСПОЗНАНО
+            </p>
+            <p className="text-[var(--matrix-green-soft)] font-mono text-xs">
+              Переход...
+            </p>
+          </div>
+        )}
+        
         {/* Индикатор прослушивания */}
-        {isListening && !error && (
+        {isListening && !error && !found && (
           <div className="mb-6">
             <div className="w-6 h-6 bg-[var(--matrix-green-bright)] rounded-full pulse mx-auto mb-2"></div>
             <p className="text-[var(--matrix-green-soft)] font-mono text-xs">
@@ -63,10 +86,28 @@ export default function HomePage() {
         )}
 
         {/* Отображение распознанного текста (для отладки) */}
-        {transcript && isListening && (
-          <p className="text-[var(--matrix-green-dark)] font-mono text-xs mb-4 break-words">
-            {transcript}
-          </p>
+        {transcript && isListening && !found && (
+          <div className="mb-4">
+            <p className="text-[var(--matrix-green-dark)] font-mono text-xs mb-2 break-words">
+              Распознано: {transcript}
+            </p>
+            <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50">
+              Ищем: {process.env.NEXT_PUBLIC_VOICE_CODE || 'tron'}
+            </p>
+          </div>
+        )}
+
+        {/* Тестовая кнопка для проверки перехода (только в dev режиме) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4">
+            <Button
+              onClick={handleSuccess}
+              size="sm"
+              variant="secondary"
+            >
+              ТЕСТ ПЕРЕХОДА
+            </Button>
+          </div>
         )}
         
         {/* Ошибки */}
