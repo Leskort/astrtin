@@ -29,16 +29,16 @@ export async function GET() {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate',
       },
-        });
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Session check error:', error);
-        }
-        return NextResponse.json({ 
-          user: null 
-        }, {
-          status: 500,
-        });
-      }
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Session check error:', error);
     }
+    return NextResponse.json({ 
+      user: null 
+    }, {
+      status: 500,
+    });
+  }
+}
 

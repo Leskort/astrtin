@@ -55,13 +55,13 @@ export async function POST(request: Request) {
     const isNetlify = !!process.env.NETLIFY;
     const useSecure = isProduction || isNetlify;
     
-        cookieStore.set('auth_session', sessionValue, {
-          httpOnly: true,
-          secure: useSecure,
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 30,
-          path: '/',
-        });
+    cookieStore.set('auth_session', sessionValue, {
+      httpOnly: true,
+      secure: useSecure,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30,
+      path: '/',
+    });
 
     return NextResponse.json({
       success: true,
@@ -69,15 +69,15 @@ export async function POST(request: Request) {
       user: {
         email: email.toLowerCase(),
       },
-      });
-    } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Login error:', error);
-      }
-      return NextResponse.json(
-        { error: 'Ошибка сервера' },
-        { status: 500 }
-      );
+    });
+  } catch (error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Login error:', error);
     }
+    return NextResponse.json(
+      { error: 'Ошибка сервера' },
+      { status: 500 }
+    );
   }
+}
 
