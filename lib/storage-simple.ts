@@ -142,15 +142,30 @@ export async function uploadPhoto(buffer: Buffer, fileName: string, mimeType: st
     missingCloudinary.push('CLOUDINARY_API_SECRET');
   }
 
-  // Если дошли сюда, значит ничего не работает
-  // В production на Netlify это не должно произойти, так как локальное хранилище должно работать
-  const errorMsg = `Ошибка сохранения фотографии. Попробуйте еще раз или обратитесь к администратору.`;
-
-  console.error('=== Storage configuration error ===');
-  console.error(errorMsg);
-  
-  throw new Error(errorMsg);
-}
+       // Если дошли сюда, значит ничего не работает
+       console.error('=== Storage configuration error ===');
+       console.error('Все варианты хранилища недоступны');
+       console.error('Netlify:', isNetlifyConfigured());
+       console.error('Supabase:', isSupabaseConfigured());
+       console.error('Cloudinary:', isCloudinaryConfigured());
+       console.error('Development mode:', process.env.NODE_ENV === 'development');
+       
+       // Формируем детальное сообщение об ошибке
+       const missingProviders: string[] = [];
+       if (!isNetlifyConfigured() && (process.env.NETLIFY || process.env.NETLIFY_DEV)) {
+         missingProviders.push('Netlify Blobs не настроен');
+       }
+       if (!isSupabaseConfigured()) {
+         missingProviders.push('Supabase не настроен (нужны NEXT_PUBLIC_SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY)');
+       }
+       if (!isCloudinaryConfigured()) {
+         missingProviders.push('Cloudinary не настроен');
+       }
+       
+       const errorMsg = `Ошибка сохранения фотографии: хранилище не настроено. ${missingProviders.join('. ')}. Попробуйте еще раз или обратитесь к администратору.`;
+       
+       throw new Error(errorMsg);
+     }
 
 export function isStorageConfigured(): boolean {
   return isNetlifyConfigured() || isSupabaseConfigured() || isCloudinaryConfigured() || process.env.NODE_ENV === 'development';

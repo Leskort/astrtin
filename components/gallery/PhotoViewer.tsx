@@ -214,8 +214,14 @@ export default function PhotoViewer({
         <ImageEditor
           photo={currentPhoto}
           onSave={async (editedFile) => {
-            await onEdit(currentPhoto, editedFile);
-            setIsEditing(false);
+            try {
+              await onEdit(currentPhoto, editedFile);
+              setIsEditing(false);
+            } catch (error: any) {
+              // Ошибка уже обработана в handleEdit, просто закрываем редактор
+              console.error('Edit failed in PhotoViewer:', error);
+              // Не закрываем редактор, чтобы пользователь мог попробовать еще раз
+            }
           }}
           onCancel={() => setIsEditing(false)}
         />

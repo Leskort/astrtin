@@ -389,24 +389,59 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
 
   const handleSave = async () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      setError('Canvas не найден');
+      return;
+    }
 
     setSaving(true);
     setError(null);
 
     try {
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          setError('Не удалось создать изображение');
-          setSaving(false);
-          return;
+      // Конвертируем canvas в blob с обработкой ошибок
+      const blob = await new Promise<Blob | null>((resolve, reject) => {
+        try {
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Не удалось создать изображение из canvas'));
+              }
+            },
+            'image/png',
+            0.95 // Качество 95%
+          );
+        } catch (error) {
+          reject(error);
         }
+      });
 
-        const file = new File([blob], photo.fileName, { type: 'image/png' });
+      if (!blob) {
+        throw new Error('Не удалось создать изображение');
+      }
+
+      // Создаем файл из blob
+      const fileName = photo.fileName || `photo-${Date.now()}.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      console.log('Saving file:', {
+        fileName: file.name,
+        size: file.size,
+        type: file.type,
+      });
+
+      // Вызываем onSave и ждем результата
+      try {
         await onSave(file);
-      }, 'image/png');
+        // Если успешно, setSaving будет установлен в false в родительском компоненте
+      } catch (saveError: any) {
+        console.error('Save error:', saveError);
+        throw new Error(saveError.message || 'Ошибка при сохранении фотографии');
+      }
     } catch (err: any) {
-      setError(err.message || 'Ошибка при сохранении');
+      console.error('HandleSave error:', err);
+      setError(err.message || 'Ошибка при сохранении фотографии. Попробуйте еще раз или обратитесь к администратору.');
       setSaving(false);
     }
   };

@@ -104,6 +104,13 @@ export default function GalleryPage() {
 
   const handleEdit = async (photo: Photo, editedFile: File) => {
     try {
+      console.log('Starting edit for photo:', photo.id);
+      console.log('File details:', {
+        name: editedFile.name,
+        size: editedFile.size,
+        type: editedFile.type,
+      });
+
       // Проверяем сессию перед сохранением
       const sessionCheck = await fetch('/api/auth/session', {
         credentials: 'include',
@@ -118,6 +125,8 @@ export default function GalleryPage() {
         throw new Error('Вы не авторизованы. Пожалуйста, войдите в систему.');
       }
 
+      console.log('Session check passed, uploading file...');
+
       const formData = new FormData();
       formData.append('file', editedFile);
       formData.append('photoId', photo.id);
@@ -128,20 +137,42 @@ export default function GalleryPage() {
         body: formData,
       });
 
+      console.log('Upload response status:', response.status);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 401) {
-          throw new Error('Сессия истекла. Пожалуйста, обновите страницу и войдите заново.');
+        let errorMessage = 'Ошибка при сохранении';
+        try {
+          const errorData = await response.json();
+          console.error('Error response:', errorData);
+          errorMessage = errorData.error || errorData.hint || errorData.message || errorMessage;
+          
+          if (response.status === 401) {
+            errorMessage = 'Сессия истекла. Пожалуйста, обновите страницу и войдите заново.';
+          } else if (response.status === 413) {
+            errorMessage = 'Файл слишком большой. Попробуйте уменьшить размер изображения.';
+          } else if (response.status >= 500) {
+            errorMessage = 'Ошибка сервера. Попробуйте еще раз или обратитесь к администратору.';
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorMessage = `Ошибка ${response.status}: ${response.statusText}`;
         }
-        throw new Error(errorData.error || errorData.hint || 'Ошибка при сохранении');
+        
+        throw new Error(errorMessage);
       }
+
+      const result = await response.json();
+      console.log('Upload successful:', result);
 
       // Обновляем список фотографий
       await loadPhotos();
+      
+      console.log('Photo list reloaded successfully');
     } catch (err: any) {
       console.error('Error editing photo:', err);
-      alert(err.message || 'Ошибка при сохранении изменений');
-      throw err;
+      const errorMessage = err.message || 'Ошибка при сохранении изменений. Попробуйте еще раз или обратитесь к администратору.';
+      alert(errorMessage);
+      throw err; // Пробрасываем ошибку дальше, чтобы ImageEditor мог обработать её
     }
   };
 
