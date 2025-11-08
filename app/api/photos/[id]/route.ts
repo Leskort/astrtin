@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { unlink } from 'fs/promises';
-import { join } from 'path';
 import { deleteFromNetlify } from '@/lib/storage-netlify';
 
 export async function GET(
@@ -21,7 +19,7 @@ export async function GET(
       );
     }
 
-    // TODO: Получить фотографию из БД/хранилища
+    // TODO: Получить фотографию из Netlify Blobs
     return NextResponse.json(
       { error: 'Не реализовано' },
       { status: 501 }
@@ -53,70 +51,21 @@ export async function DELETE(
       );
     }
 
-    // Приоритет: Netlify Blobs > локальное хранилище (development)
-    if (process.env.NETLIFY || process.env.NETLIFY_DEV) {
-      try {
-        // Проверяем, является ли ID ключом Netlify Blob (начинается с photo-)
-        if (photoId.startsWith('photo-')) {
-          await deleteFromNetlify(photoId);
-          return NextResponse.json({
-            success: true,
-            message: 'Фотография удалена',
-          });
-        }
-      } catch (err: any) {
-        console.error('Error deleting from Netlify Blobs:', err);
-        // Пробуем локальное хранилище
-      }
+    // Удаляем из Netlify Blobs
+    try {
+      await deleteFromNetlify(photoId);
+      return NextResponse.json({
+        success: true,
+        message: 'Фотография удалена',
+      });
+    } catch (err: any) {
+      console.error('Error deleting from Netlify Blobs:', err);
+      return NextResponse.json(
+        { error: `Не удалось удалить фотографию: ${err.message}` },
+        { status: 500 }
+      );
     }
-
-    // В development удаляем из файловой системы
-    if (process.env.NODE_ENV === 'development') {
-      try {
-        // Извлекаем timestamp из ID (photo-timestamp)
-        const match = photoId.match(/photo-(\d+)/);
-        if (!match) {
-          return NextResponse.json(
-            { error: 'Неверный ID фотографии' },
-            { status: 400 }
-          );
-        }
-
-        const timestamp = match[1];
-        const uploadsDir = join(process.cwd(), 'public', 'uploads');
-        const { readdir } = await import('fs/promises');
-        const files = await readdir(uploadsDir);
-        
-        // Ищем файл с этим timestamp
-        const fileToDelete = files.find(file => file.startsWith(`${timestamp}-`));
-        
-        if (fileToDelete) {
-          const filePath = join(uploadsDir, fileToDelete);
-          await unlink(filePath);
-        }
-
-        return NextResponse.json({
-          success: true,
-          message: 'Фотография удалена',
-        });
-      } catch (err: any) {
-        if (err.code === 'ENOENT') {
-          // Файл уже не существует
-          return NextResponse.json({
-            success: true,
-            message: 'Фотография удалена',
-          });
-        }
-        throw err;
-      }
-    }
-
-    // Если ничего не доступно
-    return NextResponse.json(
-      { error: 'Не удалось удалить фотографию' },
-      { status: 500 }
-    );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete error:', error);
     return NextResponse.json(
       { error: 'Ошибка сервера' },
