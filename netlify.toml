@@ -9,7 +9,3 @@
   SECRETS_SCAN_OMIT_KEYS = "VOICE_CODE,VOICE_LANGUAGE,NEXT_PUBLIC_SUPABASE_URL,NEXTAUTH_URL"
   SECRETS_SCAN_OMIT_PATHS = "*.md,*.txt"
 
-# Netlify Blobs configuration
-[[plugins]]
-  package = "@netlify/plugin-blobs"
-
