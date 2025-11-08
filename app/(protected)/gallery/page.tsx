@@ -86,6 +86,31 @@ export default function GalleryPage() {
     }
   };
 
+  const handleEdit = async (photo: Photo, editedFile: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', editedFile);
+      formData.append('photoId', photo.id);
+
+      const response = await fetch(`/api/photos/${photo.id}/edit`, {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка при сохранении');
+      }
+
+      // Обновляем список фотографий
+      await loadPhotos();
+    } catch (err: any) {
+      console.error('Error editing photo:', err);
+      alert(err.message || 'Ошибка при сохранении изменений');
+      throw err;
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -160,6 +185,7 @@ export default function GalleryPage() {
             onClose={() => setSelectedPhoto(null)}
             onDelete={handlePhotoDelete}
             onDownload={handleDownload}
+            onEdit={handleEdit}
           />
         )}
       </div>

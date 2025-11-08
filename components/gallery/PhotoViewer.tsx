@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Photo } from '@/types';
 import Button from '@/components/ui/Button';
+import PhotoEditor from './PhotoEditor';
 
 interface PhotoViewerProps {
   photo: Photo;
@@ -10,6 +11,7 @@ interface PhotoViewerProps {
   onClose: () => void;
   onDelete: (id: string) => void;
   onDownload: (photo: Photo) => void;
+  onEdit: (photo: Photo, editedFile: File) => Promise<void>;
 }
 
 export default function PhotoViewer({
@@ -18,6 +20,7 @@ export default function PhotoViewer({
   onClose,
   onDelete,
   onDownload,
+  onEdit,
 }: PhotoViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(
     photos.findIndex((p) => p.id === photo.id)
@@ -26,6 +29,7 @@ export default function PhotoViewer({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isEditing, setIsEditing] = useState(false);
 
   const currentPhoto = photos[currentIndex] || photo;
 
@@ -165,7 +169,13 @@ export default function PhotoViewer({
         )}
 
         {/* Кнопки действий */}
-        <div className="absolute bottom-4 right-4 flex gap-2">
+        <div className="absolute bottom-4 right-4 flex gap-2 flex-wrap">
+          <Button
+            onClick={() => setIsEditing(true)}
+            size="sm"
+          >
+            РЕДАКТИРОВАТЬ
+          </Button>
           <Button
             onClick={() => onDownload(currentPhoto)}
             size="sm"
@@ -198,6 +208,18 @@ export default function PhotoViewer({
           </p>
         </div>
       </div>
+
+      {/* Редактор фотографии */}
+      {isEditing && (
+        <PhotoEditor
+          photo={currentPhoto}
+          onSave={async (editedFile) => {
+            await onEdit(currentPhoto, editedFile);
+            setIsEditing(false);
+          }}
+          onCancel={() => setIsEditing(false)}
+        />
+      )}
     </div>
   );
 }
