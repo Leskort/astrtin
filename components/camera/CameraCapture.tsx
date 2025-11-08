@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import Button from '@/components/ui/Button';
 import Loading from '@/components/ui/Loading';
-import PhotoEditor from '@/components/gallery/PhotoEditor';
+import ImageEditor from '@/components/gallery/ImageEditor';
 
 interface CameraCaptureProps {
   onCaptureComplete?: () => void;
@@ -190,7 +190,7 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
 
       {/* Редактор фотографии */}
       {showEditor && capturedFile && preview && (
-        <PhotoEditor
+        <ImageEditor
           photo={{
             id: 'temp-camera-photo',
             userId: '',

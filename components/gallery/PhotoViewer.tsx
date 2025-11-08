@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Photo } from '@/types';
 import Button from '@/components/ui/Button';
-import PhotoEditor from './PhotoEditor';
+import ImageEditor from './ImageEditor';
 
 interface PhotoViewerProps {
   photo: Photo;
@@ -211,7 +211,7 @@ export default function PhotoViewer({
 
       {/* Редактор фотографии */}
       {isEditing && (
-        <PhotoEditor
+        <ImageEditor
           photo={currentPhoto}
           onSave={async (editedFile) => {
             await onEdit(currentPhoto, editedFile);
