@@ -12,31 +12,23 @@ export default function HomePage() {
   const router = useRouter();
 
   const handleSuccess = async () => {
-    console.log('handleSuccess вызван');
+    console.log('=== handleSuccess ВЫЗВАН ===');
     setFound(true);
     
-    // Небольшая задержка для визуальной обратной связи
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Проверяем наличие активной сессии
+    // Сразу переходим на логин (упрощенно для тестирования)
+    console.log('Переход на /login...');
     try {
-      const response = await fetch('/api/auth/session');
-      const session = await response.json();
-      console.log('Session:', session);
-      
-      if (session?.user) {
-        // Если сессия активна - переходим в галерею
-        console.log('Переход в галерею');
-        router.push('/gallery');
-      } else {
-        // Если сессии нет - переходим на логин
-        console.log('Переход на логин');
-        router.push('/login');
-      }
-    } catch (error) {
-      console.error('Ошибка при проверке сессии:', error);
-      // В случае ошибки переходим на логин
       router.push('/login');
+      // Дополнительно используем window.location для надежности
+      setTimeout(() => {
+        if (window.location.pathname === '/') {
+          console.log('Router не сработал, используем window.location');
+          window.location.href = '/login';
+        }
+      }, 500);
+    } catch (error) {
+      console.error('Ошибка при переходе:', error);
+      window.location.href = '/login';
     }
   };
 
@@ -101,15 +93,18 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Тестовая кнопка для проверки перехода (только в dev режиме) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-4">
+        {/* Кнопка для перехода (временно для тестирования) */}
+        {!found && (
+          <div className="mt-6">
             <Button
-              onClick={handleSuccess}
-              size="sm"
+              onClick={() => {
+                console.log('Кнопка нажата, вызываем handleSuccess');
+                handleSuccess();
+              }}
+              size="md"
               variant="secondary"
             >
-              ТЕСТ ПЕРЕХОДА
+              ПЕРЕЙТИ ВРУЧНУЮ
             </Button>
           </div>
         )}

@@ -208,19 +208,11 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let fullTranscript = '';
       
-      // Собираем все результаты (и промежуточные, и финальные)
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // Собираем ВСЕ результаты
+      for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i];
         if (result[0]) {
           fullTranscript += result[0].transcript + ' ';
-        }
-      }
-      
-      // Также проверяем все предыдущие результаты
-      for (let i = 0; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result[0] && !fullTranscript.includes(result[0].transcript)) {
-          fullTranscript = result[0].transcript + ' ' + fullTranscript;
         }
       }
       
@@ -230,51 +222,64 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
       console.log('=== РАСПОЗНАВАНИЕ ===');
       console.log('Полный текст:', currentTranscript);
       console.log('Ищем слово:', voiceCode);
-      console.log('Длина текста:', currentTranscript.length);
+      console.log('Переменная окружения:', process.env.NEXT_PUBLIC_VOICE_CODE);
 
-      // Более гибкая проверка кодового слова
-      // Убираем все знаки препинания и пробелы для сравнения
-      const cleanTranscript = currentTranscript.replace(/[^a-zа-яё0-9]/gi, '').toLowerCase();
-      const cleanCode = voiceCode.replace(/[^a-zа-яё0-9]/gi, '').toLowerCase();
+      // Упрощенная и более надежная проверка
+      // Убираем знаки препинания
+      const cleanTranscript = currentTranscript.replace(/[.,!?;:]/g, '').toLowerCase();
       
-      console.log('Очищенный текст:', cleanTranscript);
-      console.log('Очищенный код:', cleanCode);
+      // Разбиваем на слова
+      const words = cleanTranscript.split(/\s+/).filter(w => w.length > 0);
       
-      // Проверяем разными способами:
-      // 1. Точное совпадение
-      // 2. Содержит код
-      // 3. Код содержит распознанное слово (для коротких слов)
-      // 4. Похожесть звучания (для английских слов на русском языке)
-      const exactMatch = cleanTranscript === cleanCode;
-      const containsCode = cleanTranscript.includes(cleanCode);
-      const codeContainsTranscript = cleanCode.includes(cleanTranscript) && cleanTranscript.length >= 2;
-      
-      // Дополнительные варианты для "tron"
-      const alternativeMatches = [
-        'трон', 'тронн', 'троннн', 'тронннн', // русское произношение
-        'tron', 'tronn', 'tronnn', // английское
-        'тро', 'тронн', // сокращения
+      // Варианты для проверки
+      const checkVariants = [
+        voiceCode.toLowerCase(),
+        'tron',
+        'трон',
+        'тро',
+        'тронн',
       ];
-      const hasAlternative = alternativeMatches.some(alt => 
-        cleanTranscript.includes(alt) || alt.includes(cleanTranscript)
-      );
       
-      const found = exactMatch || containsCode || codeContainsTranscript || hasAlternative;
+      // Проверяем каждое слово
+      let found = false;
+      for (const word of words) {
+        for (const variant of checkVariants) {
+          if (word === variant || word.includes(variant) || variant.includes(word)) {
+            found = true;
+            console.log(`✅ НАЙДЕНО! Слово: "${word}" совпадает с вариантом: "${variant}"`);
+            break;
+          }
+        }
+        if (found) break;
+      }
       
-      console.log('Точное совпадение:', exactMatch);
-      console.log('Содержит код:', containsCode);
-      console.log('Альтернативные варианты:', hasAlternative);
-      console.log('НАЙДЕНО:', found);
+      // Также проверяем весь текст целиком
+      if (!found) {
+        for (const variant of checkVariants) {
+          if (cleanTranscript.includes(variant) || currentTranscript.includes(variant)) {
+            found = true;
+            console.log(`✅ НАЙДЕНО в тексте! Вариант: "${variant}"`);
+            break;
+          }
+        }
+      }
+      
+      console.log('ИТОГОВЫЙ РЕЗУЛЬТАТ:', found ? '✅ НАЙДЕНО' : '❌ НЕ НАЙДЕНО');
       
       if (found) {
-        console.log('✅ КОДОВОЕ СЛОВО НАЙДЕНО! Переход...');
+        console.log('🚀 ВЫЗЫВАЕМ onSuccess...');
         hasSuccessRef.current = true;
         recognition.stop();
         setIsListening(false);
         setError(null);
-        setTimeout(() => {
-          onSuccess?.();
-        }, 200);
+        
+        // Вызываем сразу, без задержки
+        if (onSuccess) {
+          console.log('onSuccess функция существует, вызываем...');
+          onSuccess();
+        } else {
+          console.error('onSuccess функция НЕ существует!');
+        }
       }
     };
 
