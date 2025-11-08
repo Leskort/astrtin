@@ -27,11 +27,9 @@ export async function uploadToNetlify(buffer: Buffer, fileName: string, mimeType
     const timestamp = Date.now();
     const fileKey = `photo-${timestamp}-${fileName}`;
 
-    // Конвертируем Buffer в Uint8Array для Netlify Blobs
-    const uint8Array = new Uint8Array(buffer);
-    
-    // Netlify Blobs принимает Buffer, Uint8Array, или строку
-    await store.set(fileKey, uint8Array, {
+    // Netlify Blobs принимает Buffer, ArrayBuffer, Uint8Array, или строку
+    // Используем buffer напрямую с приведением типа, так как Buffer совместим
+    await store.set(fileKey, buffer as any, {
       metadata: {
         fileName,
         mimeType,
