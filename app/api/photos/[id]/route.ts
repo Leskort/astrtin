@@ -59,14 +59,18 @@ export async function DELETE(
         message: 'Фотография удалена',
       });
     } catch (err: any) {
-      console.error('Error deleting from Netlify Blobs:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error deleting from Netlify Blobs:', err);
+      }
       return NextResponse.json(
         { error: `Не удалось удалить фотографию: ${err.message}` },
         { status: 500 }
       );
     }
   } catch (error: any) {
-    console.error('Delete error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Delete error:', error);
+    }
     return NextResponse.json(
       { error: 'Ошибка сервера' },
       { status: 500 }

@@ -201,12 +201,6 @@ export default function PhotoViewer({
           </Button>
         </div>
 
-        {/* Подсказка по зуму */}
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-[var(--matrix-black)] bg-opacity-80 border-2 border-[var(--matrix-green-dark)] px-4 py-2">
-          <p className="text-[var(--matrix-green-dark)] font-mono text-xs">
-            Колесико мыши + Ctrl для зума | Стрелки для навигации
-          </p>
-        </div>
       </div>
 
       {/* Редактор фотографии */}
@@ -219,10 +213,6 @@ export default function PhotoViewer({
               // Закрываем редактор только если сохранение прошло успешно
               setIsEditing(false);
             } catch (error: any) {
-              // Ошибка уже обработана в handleEdit с alert
-              // Не закрываем редактор, чтобы пользователь мог попробовать еще раз
-              console.error('Edit failed in PhotoViewer:', error);
-              // Пробрасываем ошибку дальше, чтобы ImageEditor мог показать её
               throw error;
             }
           }}

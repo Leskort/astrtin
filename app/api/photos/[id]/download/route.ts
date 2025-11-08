@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getFromNetlify } from '@/lib/storage-netlify';
 
 export async function GET(
   request: Request,
@@ -7,6 +8,8 @@ export async function GET(
 ) {
   try {
     const params = await context.params;
+    const photoId = params.id;
+    
     // Проверяем сессию
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get('auth_session');
@@ -18,14 +21,27 @@ export async function GET(
       );
     }
 
-    // TODO: Получить файл из хранилища и вернуть его
+    // Получаем файл из Netlify Blobs
+    const result = await getFromNetlify(photoId);
+    
+    if (!result) {
+      return NextResponse.json(
+        { error: 'Фотография не найдена' },
+        { status: 404 }
+      );
+    }
+
+    // Возвращаем файл для скачивания
+    return new NextResponse(result.data as any, {
+      headers: {
+        'Content-Type': result.metadata.mimeType || 'image/jpeg',
+        'Content-Disposition': `attachment; filename="${result.metadata.fileName || photoId}"`,
+        'Cache-Control': 'no-cache',
+      },
+    });
+  } catch (error: any) {
     return NextResponse.json(
-      { error: 'Скачивание будет реализовано после настройки хранилища' },
-      { status: 501 }
-    );
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Ошибка сервера' },
+      { error: error.message || 'Ошибка сервера' },
       { status: 500 }
     );
   }

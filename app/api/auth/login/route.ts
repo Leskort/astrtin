@@ -55,20 +55,13 @@ export async function POST(request: Request) {
     const isNetlify = !!process.env.NETLIFY;
     const useSecure = isProduction || isNetlify;
     
-    cookieStore.set('auth_session', sessionValue, {
-      httpOnly: true,
-      secure: useSecure,
-      sameSite: 'lax', // lax позволяет отправлять cookie с GET запросами из других сайтов и POST запросами
-      maxAge: 60 * 60 * 24 * 30, // 30 дней
-      path: '/',
-    });
-    
-    console.log('Session cookie set:', {
-      hasValue: !!sessionValue,
-      secure: useSecure,
-      environment: process.env.NODE_ENV,
-      isNetlify,
-    });
+        cookieStore.set('auth_session', sessionValue, {
+          httpOnly: true,
+          secure: useSecure,
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 30,
+          path: '/',
+        });
 
     return NextResponse.json({
       success: true,
@@ -76,13 +69,15 @@ export async function POST(request: Request) {
       user: {
         email: email.toLowerCase(),
       },
-    });
-  } catch (error: any) {
-    console.error('Login error:', error);
-    return NextResponse.json(
-      { error: 'Ошибка сервера' },
-      { status: 500 }
-    );
+      });
+    } catch (error: any) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Login error:', error);
+      }
+      return NextResponse.json(
+        { error: 'Ошибка сервера' },
+        { status: 500 }
+      );
+    }
   }
-}
 

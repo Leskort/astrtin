@@ -44,14 +44,17 @@ export async function GET() {
         photos,
       });
     } catch (err: any) {
-      console.error('Error fetching from Netlify Blobs:', err);
-      // Если ошибка, возвращаем пустой массив
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching from Netlify Blobs:', err);
+      }
       return NextResponse.json({
         photos: [],
       });
     }
   } catch (error) {
-    console.error('Error fetching photos:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching photos:', error);
+    }
     return NextResponse.json(
       { error: 'Ошибка сервера' },
       { status: 500 }

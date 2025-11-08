@@ -45,7 +45,6 @@ export default function GalleryPage() {
       const data = await response.json();
       setPhotos(data.photos || []);
     } catch (err: any) {
-      console.error('Error loading photos:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -75,7 +74,6 @@ export default function GalleryPage() {
         setSelectedPhoto(null);
       }
     } catch (err: any) {
-      console.error('Error deleting photo:', err);
       alert('Ошибка при удалении фотографии');
     }
   };
@@ -85,7 +83,10 @@ export default function GalleryPage() {
       const response = await fetch(`/api/photos/${photo.id}/download`, {
         credentials: 'include',
       });
-      if (!response.ok) throw new Error('Не удалось скачать');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Не удалось скачать');
+      }
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -97,20 +98,12 @@ export default function GalleryPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err: any) {
-      console.error('Error downloading photo:', err);
-      alert('Ошибка при скачивании фотографии');
+      alert(err.message || 'Ошибка при скачивании фотографии');
     }
   };
 
   const handleEdit = async (photo: Photo, editedFile: File) => {
     try {
-      console.log('Starting edit for photo:', photo.id);
-      console.log('File details:', {
-        name: editedFile.name,
-        size: editedFile.size,
-        type: editedFile.type,
-      });
-
       // Проверяем сессию перед сохранением
       const sessionCheck = await fetch('/api/auth/session', {
         credentials: 'include',
@@ -125,8 +118,6 @@ export default function GalleryPage() {
         throw new Error('Вы не авторизованы. Пожалуйста, войдите в систему.');
       }
 
-      console.log('Session check passed, uploading file...');
-
       const formData = new FormData();
       formData.append('file', editedFile);
       formData.append('photoId', photo.id);
@@ -137,13 +128,10 @@ export default function GalleryPage() {
         body: formData,
       });
 
-      console.log('Upload response status:', response.status);
-
       if (!response.ok) {
         let errorMessage = 'Ошибка при сохранении';
         try {
           const errorData = await response.json();
-          console.error('Error response:', errorData);
           errorMessage = errorData.error || errorData.hint || errorData.message || errorMessage;
           
           if (response.status === 401) {
@@ -154,25 +142,18 @@ export default function GalleryPage() {
             errorMessage = 'Ошибка сервера. Попробуйте еще раз или обратитесь к администратору.';
           }
         } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
           errorMessage = `Ошибка ${response.status}: ${response.statusText}`;
         }
         
         throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      console.log('Upload successful:', result);
-
       // Обновляем список фотографий
       await loadPhotos();
-      
-      console.log('Photo list reloaded successfully');
     } catch (err: any) {
-      console.error('Error editing photo:', err);
       const errorMessage = err.message || 'Ошибка при сохранении изменений. Попробуйте еще раз или обратитесь к администратору.';
       alert(errorMessage);
-      throw err; // Пробрасываем ошибку дальше, чтобы ImageEditor мог обработать её
+      throw err;
     }
   };
 

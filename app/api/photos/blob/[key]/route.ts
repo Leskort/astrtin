@@ -28,7 +28,9 @@ export async function GET(
       },
     });
   } catch (error: any) {
-    console.error('Error fetching blob:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching blob:', error);
+    }
     return NextResponse.json(
       { error: 'Ошибка при получении фотографии' },
       { status: 500 }
