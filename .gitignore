@@ -39,6 +39,7 @@ ENV_FOR_NETLIFY.txt
 COPY_PASTE_ENV.txt
 netlify-env-example.txt
 ENV_SETUP.md
+DEPLOY.md
 
 # vercel
 .vercel
