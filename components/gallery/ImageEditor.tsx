@@ -434,10 +434,13 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
       // Вызываем onSave и ждем результата
       try {
         await onSave(file);
-        // Если успешно, setSaving будет установлен в false в родительском компоненте
+        // Если успешно, сбрасываем состояние сохранения
+        setSaving(false);
+        console.log('Photo saved successfully');
       } catch (saveError: any) {
-        console.error('Save error:', saveError);
-        throw new Error(saveError.message || 'Ошибка при сохранении фотографии');
+        console.error('Save error in ImageEditor:', saveError);
+        // Пробрасываем ошибку, чтобы она была обработана ниже
+        throw saveError;
       }
     } catch (err: any) {
       console.error('HandleSave error:', err);

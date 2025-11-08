@@ -216,11 +216,14 @@ export default function PhotoViewer({
           onSave={async (editedFile) => {
             try {
               await onEdit(currentPhoto, editedFile);
+              // Закрываем редактор только если сохранение прошло успешно
               setIsEditing(false);
             } catch (error: any) {
-              // Ошибка уже обработана в handleEdit, просто закрываем редактор
-              console.error('Edit failed in PhotoViewer:', error);
+              // Ошибка уже обработана в handleEdit с alert
               // Не закрываем редактор, чтобы пользователь мог попробовать еще раз
+              console.error('Edit failed in PhotoViewer:', error);
+              // Пробрасываем ошибку дальше, чтобы ImageEditor мог показать её
+              throw error;
             }
           }}
           onCancel={() => setIsEditing(false)}
