@@ -61,9 +61,16 @@ export async function deleteFromSupabase(filePath: string): Promise<void> {
 }
 
 export function isSupabaseConfigured(): boolean {
-  return !!(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const hasUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const hasKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (hasUrl && !hasKey) {
+    console.warn('Supabase URL настроен, но отсутствует SUPABASE_SERVICE_ROLE_KEY');
+  }
+  if (!hasUrl && hasKey) {
+    console.warn('Supabase ключ настроен, но отсутствует NEXT_PUBLIC_SUPABASE_URL');
+  }
+  
+  return hasUrl && hasKey;
 }
 

@@ -45,10 +45,14 @@ export async function deleteFromCloudinary(publicId: string): Promise<void> {
 }
 
 export function isCloudinaryConfigured(): boolean {
-  return !!(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET
-  );
+  const hasName = !!process.env.CLOUDINARY_CLOUD_NAME;
+  const hasKey = !!process.env.CLOUDINARY_API_KEY;
+  const hasSecret = !!process.env.CLOUDINARY_API_SECRET;
+  
+  if (hasName && (!hasKey || !hasSecret)) {
+    console.warn('Cloudinary Cloud Name настроен, но отсутствуют ключи API');
+  }
+  
+  return hasName && hasKey && hasSecret;
 }
 
