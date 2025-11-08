@@ -113,6 +113,17 @@ export async function listNetlifyPhotos(): Promise<Array<{ key: string; metadata
 export function isNetlifyConfigured(): boolean {
   // Netlify Blobs доступен автоматически в Netlify Functions
   // Проверяем, что мы находимся в среде Netlify
-  return !!process.env.NETLIFY || !!process.env.NETLIFY_DEV;
+  // Также проверяем, что пакет @netlify/blobs доступен
+  try {
+    const hasNetlifyEnv = !!process.env.NETLIFY || !!process.env.NETLIFY_DEV;
+    // Проверяем, что getStore доступен (не выбросит ошибку при импорте)
+    if (hasNetlifyEnv && typeof getStore === 'function') {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking Netlify Blobs availability:', error);
+    return false;
+  }
 }
 
