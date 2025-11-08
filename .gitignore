@@ -29,6 +29,15 @@ yarn-error.log*
 .env*.local
 .env
 
+# env example files with secrets
+*ENV*.txt
+*env*.txt
+NETLIFY_ENV.md
+NETLIFY_QUICK_START.md
+ENV_FOR_NETLIFY.txt
+COPY_PASTE_ENV.txt
+netlify-env-example.txt
+
 # vercel
 .vercel
 
