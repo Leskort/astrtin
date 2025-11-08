@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
+import Button from '@/components/ui/Button';
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
@@ -31,7 +32,7 @@ export default function HomePage() {
     console.error('Voice recognition error:', error);
   };
 
-  const { isListening, error } = useVoiceRecognition({
+  const { isListening, error, transcript, isSupported, startListening, stopListening } = useVoiceRecognition({
     onSuccess: handleSuccess,
     onError: handleError,
   });
@@ -46,21 +47,61 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--matrix-black)] p-4">
-      <div className="text-center fade-in">
-        <h1 className="text-6xl md:text-8xl font-mono text-[var(--matrix-green-bright)] text-glow-strong">
+      <div className="text-center fade-in max-w-md w-full">
+        <h1 className="text-6xl md:text-8xl font-mono text-[var(--matrix-green-bright)] text-glow-strong mb-8">
           astrinn
         </h1>
         
-        {error && (
-          <p className="text-[var(--matrix-red-neon)] font-mono text-sm mt-4 text-glow-red">
-            {error}
+        {/* Индикатор прослушивания */}
+        {isListening && !error && (
+          <div className="mb-6">
+            <div className="w-6 h-6 bg-[var(--matrix-green-bright)] rounded-full pulse mx-auto mb-2"></div>
+            <p className="text-[var(--matrix-green-soft)] font-mono text-xs">
+              Слушаю...
+            </p>
+          </div>
+        )}
+
+        {/* Отображение распознанного текста (для отладки) */}
+        {transcript && isListening && (
+          <p className="text-[var(--matrix-green-dark)] font-mono text-xs mb-4 break-words">
+            {transcript}
           </p>
         )}
         
-        {isListening && !error && (
-          <div className="mt-8">
-            <div className="w-4 h-4 bg-[var(--matrix-green-bright)] rounded-full pulse mx-auto"></div>
+        {/* Ошибки */}
+        {error && (
+          <div className="mb-6">
+            <p className="text-[var(--matrix-red-neon)] font-mono text-sm mb-4 text-glow-red">
+              {error}
+            </p>
+            
+            {/* Кнопка для повторной попытки */}
+            {error.includes('микрофон') || error.includes('браузер') ? (
+              <Button
+                onClick={() => {
+                  window.location.reload();
+                }}
+                size="md"
+              >
+                ПОВТОРИТЬ
+              </Button>
+            ) : (
+              <Button
+                onClick={startListening}
+                size="md"
+              >
+                НАЧАТЬ СЛУШАТЬ
+              </Button>
+            )}
           </div>
+        )}
+
+        {/* Информация о поддержке браузера */}
+        {isSupported === false && (
+          <p className="text-[var(--matrix-yellow-neon)] font-mono text-xs mt-4">
+            Используйте Chrome или Edge для лучшей поддержки
+          </p>
         )}
       </div>
     </div>
