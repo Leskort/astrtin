@@ -40,6 +40,20 @@ export default function CameraPage() {
   const handleEditComplete = async (file: File) => {
     // Загружаем отредактированную фотографию
     try {
+      // Проверяем сессию перед загрузкой
+      const sessionCheck = await fetch('/api/auth/session', {
+        credentials: 'include',
+      });
+      
+      if (!sessionCheck.ok) {
+        throw new Error('Сессия истекла. Пожалуйста, войдите в систему заново.');
+      }
+      
+      const sessionData = await sessionCheck.json();
+      if (!sessionData.user) {
+        throw new Error('Вы не авторизованы. Пожалуйста, войдите в систему.');
+      }
+
       const formData = new FormData();
       formData.append('file', file);
 
@@ -51,7 +65,10 @@ export default function CameraPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Ошибка загрузки');
+        if (response.status === 401) {
+          throw new Error('Сессия истекла. Пожалуйста, обновите страницу и войдите заново.');
+        }
+        throw new Error(errorData.error || errorData.hint || 'Ошибка загрузки');
       }
 
       // Успешная загрузка - переходим в галерею

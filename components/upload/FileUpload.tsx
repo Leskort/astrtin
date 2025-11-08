@@ -72,6 +72,20 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
     setProgress(0);
 
     try {
+      // Проверяем сессию перед загрузкой
+      const sessionCheck = await fetch('/api/auth/session', {
+        credentials: 'include',
+      });
+      
+      if (!sessionCheck.ok) {
+        throw new Error('Сессия истекла. Пожалуйста, войдите в систему заново.');
+      }
+      
+      const sessionData = await sessionCheck.json();
+      if (!sessionData.user) {
+        throw new Error('Вы не авторизованы. Пожалуйста, войдите в систему.');
+      }
+
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         
@@ -91,7 +105,10 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Ошибка загрузки');
+          if (response.status === 401) {
+            throw new Error('Сессия истекла. Пожалуйста, обновите страницу и войдите заново.');
+          }
+          throw new Error(errorData.error || errorData.hint || 'Ошибка загрузки');
         }
 
         setProgress(((i + 1) / selectedFiles.length) * 100);
@@ -105,6 +122,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
       onUploadComplete?.();
     } catch (err: any) {
       setError(err.message || 'Ошибка при загрузке');
+      console.error('Upload error:', err);
     } finally {
       setUploading(false);
       setProgress(0);

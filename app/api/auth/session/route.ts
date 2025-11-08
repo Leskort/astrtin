@@ -4,7 +4,6 @@ import { cookies } from 'next/headers';
 export async function GET() {
   try {
     // Простая проверка сессии через cookie
-    // TODO: Реализовать полноценную проверку через NextAuth
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get('auth_session');
     
@@ -14,13 +13,30 @@ export async function GET() {
         user: { 
           email: sessionToken.value 
         } 
+      }, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
       });
     }
     
     // Нет сессии
-    return NextResponse.json({ user: null });
+    return NextResponse.json({ 
+      user: null 
+    }, {
+      status: 401,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    });
   } catch (error) {
-    return NextResponse.json({ user: null });
+    console.error('Session check error:', error);
+    return NextResponse.json({ 
+      user: null 
+    }, {
+      status: 500,
+    });
   }
 }
 
