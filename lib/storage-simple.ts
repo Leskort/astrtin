@@ -14,22 +14,30 @@ export async function uploadPhoto(buffer: Buffer, fileName: string, mimeType: st
   const timestamp = Date.now();
   
   // Диагностика: проверяем какие переменные есть
-  const hasSupabaseUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const hasSupabaseKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const hasSupabaseUrl = !!supabaseUrl;
+  const hasSupabaseKey = !!supabaseKey;
   const hasCloudinaryName = !!process.env.CLOUDINARY_CLOUD_NAME;
   const hasCloudinaryKey = !!process.env.CLOUDINARY_API_KEY;
   const hasCloudinarySecret = !!process.env.CLOUDINARY_API_SECRET;
   
-  console.log('Storage configuration check:', {
-    supabase: { url: hasSupabaseUrl, key: hasSupabaseKey },
-    cloudinary: { name: hasCloudinaryName, key: hasCloudinaryKey, secret: hasCloudinarySecret },
-    nodeEnv: process.env.NODE_ENV,
-  });
+  console.log('=== Storage configuration check ===');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('Supabase URL:', hasSupabaseUrl ? `${supabaseUrl?.substring(0, 30)}...` : 'NOT SET');
+  console.log('Supabase Key:', hasSupabaseKey ? `${supabaseKey?.substring(0, 20)}...` : 'NOT SET');
+  console.log('Cloudinary Name:', hasCloudinaryName ? 'SET' : 'NOT SET');
+  console.log('Cloudinary Key:', hasCloudinaryKey ? 'SET' : 'NOT SET');
+  console.log('Cloudinary Secret:', hasCloudinarySecret ? 'SET' : 'NOT SET');
+  console.log('isSupabaseConfigured():', isSupabaseConfigured());
+  console.log('isCloudinaryConfigured():', isCloudinaryConfigured());
   
   // Приоритет: Supabase > Cloudinary > локальное хранилище
   if (isSupabaseConfigured()) {
+    console.log('Attempting Supabase upload...');
     try {
       const url = await uploadToSupabase(buffer, fileName, mimeType);
+      console.log('Supabase upload successful:', url);
       return {
         url,
         id: `supabase-${timestamp}`,
@@ -37,8 +45,13 @@ export async function uploadPhoto(buffer: Buffer, fileName: string, mimeType: st
       };
     } catch (error: any) {
       console.error('Supabase upload failed:', error);
+      console.error('Error details:', error.message);
       // Пробуем следующий вариант
     }
+  } else {
+    console.log('Supabase not configured. Checking reasons...');
+    if (!hasSupabaseUrl) console.log('  - NEXT_PUBLIC_SUPABASE_URL is missing');
+    if (!hasSupabaseKey) console.log('  - SUPABASE_SERVICE_ROLE_KEY is missing');
   }
 
   if (isCloudinaryConfigured()) {
@@ -78,26 +91,65 @@ export async function uploadPhoto(buffer: Buffer, fileName: string, mimeType: st
 
   // Детальное сообщение об ошибке
   const missingVars: string[] = [];
-  if (!hasSupabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
-  if (!hasSupabaseKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
-  if (!hasCloudinaryName) missingVars.push('CLOUDINARY_CLOUD_NAME');
-  if (!hasCloudinaryKey) missingVars.push('CLOUDINARY_API_KEY');
-  if (!hasCloudinarySecret) missingVars.push('CLOUDINARY_API_SECRET');
-
-  const errorMsg = `Нет настроенного хранилища. Добавьте в Netlify Environment Variables:
+  const missingSupabase: string[] = [];
+  const missingCloudinary: string[] = [];
   
-Для Supabase (рекомендуется):
-- NEXT_PUBLIC_SUPABASE_URL
-- SUPABASE_SERVICE_ROLE_KEY
+  if (!hasSupabaseUrl) {
+    missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+    missingSupabase.push('NEXT_PUBLIC_SUPABASE_URL');
+  }
+  if (!hasSupabaseKey) {
+    missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
+    missingSupabase.push('SUPABASE_SERVICE_ROLE_KEY');
+  }
+  if (!hasCloudinaryName) {
+    missingVars.push('CLOUDINARY_CLOUD_NAME');
+    missingCloudinary.push('CLOUDINARY_CLOUD_NAME');
+  }
+  if (!hasCloudinaryKey) {
+    missingVars.push('CLOUDINARY_API_KEY');
+    missingCloudinary.push('CLOUDINARY_API_KEY');
+  }
+  if (!hasCloudinarySecret) {
+    missingVars.push('CLOUDINARY_API_SECRET');
+    missingCloudinary.push('CLOUDINARY_API_SECRET');
+  }
 
-Или для Cloudinary:
-- CLOUDINARY_CLOUD_NAME
-- CLOUDINARY_API_KEY
-- CLOUDINARY_API_SECRET
+  // Формируем сообщение только о недостающих переменных для выбранного провайдера
+  let errorMsg = 'Нет настроенного хранилища.\n\n';
+  
+  if (missingSupabase.length > 0 && missingCloudinary.length === 3) {
+    // Если отсутствуют только Supabase переменные, показываем только их
+    errorMsg += `Для Supabase (рекомендуется) отсутствуют:\n`;
+    missingSupabase.forEach(v => errorMsg += `- ${v}\n`);
+    errorMsg += `\nВАЖНО: После добавления переменных пересоберите проект в Netlify!\n`;
+    errorMsg += `Deploys → Trigger deploy → Deploy site\n`;
+  } else if (missingCloudinary.length > 0 && missingSupabase.length === 2) {
+    // Если отсутствуют только Cloudinary переменные
+    errorMsg += `Для Cloudinary отсутствуют:\n`;
+    missingCloudinary.forEach(v => errorMsg += `- ${v}\n`);
+  } else {
+    // Если отсутствуют переменные обоих провайдеров
+    errorMsg += `Добавьте переменные для одного из провайдеров:\n\n`;
+    errorMsg += `Для Supabase (рекомендуется):\n`;
+    errorMsg += `- NEXT_PUBLIC_SUPABASE_URL\n`;
+    errorMsg += `- SUPABASE_SERVICE_ROLE_KEY\n\n`;
+    errorMsg += `Или для Cloudinary:\n`;
+    errorMsg += `- CLOUDINARY_CLOUD_NAME\n`;
+    errorMsg += `- CLOUDINARY_API_KEY\n`;
+    errorMsg += `- CLOUDINARY_API_SECRET\n`;
+  }
+  
+  errorMsg += `\nОтсутствуют: ${missingVars.join(', ')}\n`;
+  errorMsg += `\nВАЖНО: После добавления переменных в Netlify:\n`;
+  errorMsg += `1. Перейдите в Deploys → Trigger deploy → Deploy site\n`;
+  errorMsg += `2. Или сделайте commit + push в GitHub\n`;
+  errorMsg += `3. Дождитесь завершения сборки\n\n`;
+  errorMsg += `Инструкция: SUPABASE_SETUP.md`;
 
-Отсутствуют: ${missingVars.join(', ')}
-Инструкция: SUPABASE_SETUP.md`;
-
+  console.error('=== Storage configuration error ===');
+  console.error(errorMsg);
+  
   throw new Error(errorMsg);
 }
 
