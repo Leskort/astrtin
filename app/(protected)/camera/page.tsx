@@ -80,19 +80,20 @@ export default function CameraPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--matrix-black)] p-4">
+    <div className="min-h-screen bg-[var(--matrix-black)] p-2 sm:p-4">
       <div className="max-w-4xl mx-auto">
         {/* Заголовок */}
-        <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-          <h1 className="text-3xl md:text-5xl font-mono text-[var(--matrix-green-bright)] text-glow-strong">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-8 gap-3 md:gap-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-mono text-[var(--matrix-green-bright)] text-glow-strong">
             КАМЕРА
           </h1>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button
               onClick={() => router.push('/gallery')}
               size="md"
               variant="secondary"
+              className="flex-1 sm:flex-none min-w-[100px]"
             >
               ГАЛЕРЕЯ
             </Button>
@@ -100,6 +101,7 @@ export default function CameraPage() {
               onClick={() => router.push('/upload')}
               size="md"
               variant="secondary"
+              className="flex-1 sm:flex-none min-w-[100px]"
             >
               ЗАГРУЗИТЬ
             </Button>

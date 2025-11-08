@@ -42,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${vt323.variable} ${shareTechMono.variable} ${orbitron.variable} antialiased`}>
+      <body className={`${vt323.variable} ${shareTechMono.variable} ${orbitron.variable} antialiased matrix-bg`}>
         {children}
       </body>
     </html>

@@ -147,8 +147,10 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
             ? 'border-[var(--matrix-green-bright)] button-glow bg-[var(--matrix-green-dark)] bg-opacity-20' 
             : 'border-[var(--matrix-green-dark)]'
           }
-          p-12 text-center transition-all duration-300
-          cursor-pointer
+          p-6 md:p-8 lg:p-12 text-center transition-all duration-300
+          cursor-pointer touch-manipulation
+          min-h-[200px] md:min-h-[250px]
+          flex items-center justify-center
         `}
         onClick={() => fileInputRef.current?.click()}
       >
@@ -161,9 +163,9 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
           className="hidden"
         />
 
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4 w-full">
           <svg
-            className="w-16 h-16 mx-auto text-[var(--matrix-green-dark)]"
+            className="w-12 h-12 md:w-16 md:h-16 mx-auto text-[var(--matrix-green-dark)]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -175,13 +177,13 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
             />
           </svg>
-          <p className="text-[var(--matrix-green-bright)] font-mono text-lg text-glow">
+          <p className="text-[var(--matrix-green-bright)] font-mono text-base md:text-lg text-glow">
             {isDragging ? 'ОТПУСТИТЕ ДЛЯ ЗАГРУЗКИ' : 'ПЕРЕТАЩИТЕ ФАЙЛЫ СЮДА'}
           </p>
-          <p className="text-[var(--matrix-green-dark)] font-mono text-sm">
+          <p className="text-[var(--matrix-green-dark)] font-mono text-xs md:text-sm">
             или нажмите для выбора файлов
           </p>
-          <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50">
+          <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50 px-2">
             Поддерживаются: JPG, PNG, GIF, WEBP (макс 10MB)
           </p>
         </div>
@@ -190,17 +192,17 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
       {/* Выбранные файлы */}
       {selectedFiles.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[var(--matrix-green-soft)] font-mono text-sm">
+          <p className="text-[var(--matrix-green-soft)] font-mono text-xs md:text-sm">
             Выбрано файлов: {selectedFiles.length}
           </p>
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {selectedFiles.map((file, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 border-2 border-[var(--matrix-green-dark)] bg-[var(--matrix-gray-dark)]"
+                className="flex items-center justify-between p-2 md:p-3 border-2 border-[var(--matrix-green-dark)] bg-[var(--matrix-gray-dark)] gap-2"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-[var(--matrix-green-bright)] font-mono text-sm truncate">
+                  <p className="text-[var(--matrix-green-bright)] font-mono text-xs md:text-sm truncate">
                     {file.name}
                   </p>
                   <p className="text-[var(--matrix-green-dark)] font-mono text-xs">
@@ -212,9 +214,9 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
                     e.stopPropagation();
                     removeFile(index);
                   }}
-                  className="ml-4 w-8 h-8 border-2 border-[var(--matrix-red-neon)] flex items-center justify-center hover:bg-[var(--matrix-red-neon)] transition-all"
+                  className="ml-2 md:ml-4 w-10 h-10 md:w-8 md:h-8 border-2 border-[var(--matrix-red-neon)] flex items-center justify-center hover:bg-[var(--matrix-red-neon)] active:bg-[var(--matrix-red-neon)] transition-all touch-manipulation flex-shrink-0"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                   </svg>
                 </button>
@@ -228,9 +230,9 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
       {uploading && (
         <div className="space-y-2">
           <Loading text="ЗАГРУЗКА..." />
-          <div className="w-full bg-[var(--matrix-gray-dark)] border-2 border-[var(--matrix-green-dark)] h-4">
+          <div className="w-full bg-[var(--matrix-gray-dark)] border-2 border-[var(--matrix-green-dark)] h-3 md:h-4">
             <div
-              className="h-full bg-[var(--matrix-green-bright)] transition-all duration-300"
+              className="h-full bg-[var(--matrix-green-bright)] transition-all duration-300 button-glow"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -242,9 +244,11 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
       {/* Ошибка */}
       {error && (
-        <p className="text-[var(--matrix-red-neon)] font-mono text-sm text-glow-red">
-          {error}
-        </p>
+        <div className="p-3 md:p-4 border-2 border-[var(--matrix-red-neon)] bg-[var(--matrix-black)] bg-opacity-50">
+          <p className="text-[var(--matrix-red-neon)] font-mono text-xs md:text-sm text-glow-red">
+            {error}
+          </p>
+        </div>
       )}
 
       {/* Кнопка загрузки */}
@@ -254,7 +258,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
           size="lg"
           className="w-full"
         >
-          ЗАГРУЗИТЬ {selectedFiles.length} ФАЙЛОВ
+          ЗАГРУЗИТЬ {selectedFiles.length} {selectedFiles.length === 1 ? 'ФАЙЛ' : 'ФАЙЛОВ'}
         </Button>
       )}
     </div>

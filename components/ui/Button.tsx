@@ -27,9 +27,9 @@ export default function Button({
   };
   
   const sizeStyles = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base min-h-[44px]',
-    lg: 'px-6 py-3 text-lg min-h-[48px]',
+    sm: 'px-3 py-1.5 text-sm min-h-[40px] md:min-h-[44px]',
+    md: 'px-4 py-2 text-base md:text-base text-sm min-h-[48px] md:min-h-[44px]',
+    lg: 'px-6 py-3 text-lg md:text-lg text-base min-h-[52px] md:min-h-[48px]',
   };
   
   const disabledStyles = disabled 
@@ -40,7 +40,7 @@ export default function Button({
 
   return (
     <button
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${glowClass} ${disabledStyles} ${className}`}
+      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${glowClass} ${disabledStyles} ${className} touch-manipulation active:scale-95 transition-transform`}
       disabled={disabled}
       {...props}
     >

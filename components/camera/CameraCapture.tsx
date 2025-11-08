@@ -112,7 +112,7 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Скрытый input для системной камеры */}
       <input
         ref={fileInputRef}
@@ -125,7 +125,7 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
 
       {/* Превью фотографии - показываем только если редактор не открыт */}
       {preview && !showEditor && (
-        <div className="relative w-full aspect-[4/3] bg-[var(--matrix-gray-dark)] border-2 border-[var(--matrix-green-bright)] overflow-hidden">
+        <div className="relative w-full aspect-[4/3] bg-[var(--matrix-gray-dark)] border-2 border-[var(--matrix-green-bright)] overflow-hidden rounded-sm">
           <img
             src={preview}
             alt="Preview"
@@ -136,10 +136,10 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
 
       {/* Плейсхолдер когда нет превью */}
       {!preview && !uploading && (
-        <div className="relative w-full aspect-[4/3] bg-[var(--matrix-gray-dark)] border-2 border-[var(--matrix-green-dark)] flex items-center justify-center">
-          <div className="text-center">
+        <div className="relative w-full aspect-[4/3] bg-[var(--matrix-gray-dark)] border-2 border-[var(--matrix-green-dark)] flex items-center justify-center rounded-sm">
+          <div className="text-center p-4">
             <svg
-              className="w-20 h-20 mx-auto text-[var(--matrix-green-dark)] mb-4"
+              className="w-16 h-16 md:w-20 md:h-20 mx-auto text-[var(--matrix-green-dark)] mb-3 md:mb-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -157,7 +157,7 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
                 d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            <p className="text-[var(--matrix-green-dark)] font-mono text-sm mb-2">
+            <p className="text-[var(--matrix-green-dark)] font-mono text-xs md:text-sm mb-2">
               Нажмите кнопку для съемки
             </p>
             <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50">
@@ -169,9 +169,11 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
 
       {/* Ошибка */}
       {error && (
-        <p className="text-[var(--matrix-red-neon)] font-mono text-sm text-glow-red">
-          {error}
-        </p>
+        <div className="p-3 md:p-4 border-2 border-[var(--matrix-red-neon)] bg-[var(--matrix-black)] bg-opacity-50">
+          <p className="text-[var(--matrix-red-neon)] font-mono text-xs md:text-sm text-glow-red">
+            {error}
+          </p>
+        </div>
       )}
 
       {/* Индикатор загрузки */}
@@ -183,12 +185,12 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
 
       {/* Кнопки управления - показываем только если редактор не открыт */}
       {!showEditor && (
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="flex flex-wrap gap-3 md:gap-4 justify-center">
           <Button
             onClick={() => fileInputRef.current?.click()}
             size="lg"
             disabled={uploading}
-            className="min-w-[200px]"
+            className="w-full sm:w-auto min-w-[200px]"
           >
             ОТКРЫТЬ КАМЕРУ
           </Button>
@@ -197,7 +199,7 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
 
       {/* Подсказка - показываем только если редактор не открыт */}
       {!preview && !uploading && !showEditor && (
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-2 px-2">
           <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50">
             На iPhone откроется системная камера
           </p>

@@ -467,11 +467,11 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
     setTextPosition(null);
   };
 
-  return (
-    <div className="fixed inset-0 bg-[var(--matrix-black)] z-50 flex flex-col overflow-hidden" style={{ height: '100vh' }}>
-      {/* Панель инструментов - фиксированная сверху, компактная */}
-      <div className="flex-shrink-0 w-full bg-[var(--matrix-black)] border-b-2 border-[var(--matrix-green-dark)] p-2">
-        <div className="flex flex-wrap gap-2 items-center justify-center max-w-7xl mx-auto">
+      return (
+        <div className="fixed inset-0 bg-[var(--matrix-black)] bg-opacity-98 z-50 flex flex-col overflow-hidden" style={{ height: '100vh' }}>
+          {/* Панель инструментов - фиксированная сверху, компактная */}
+          <div className="flex-shrink-0 w-full bg-[var(--matrix-black)] bg-opacity-95 border-b-2 border-[var(--matrix-green-dark)] p-2 md:p-3">
+            <div className="flex flex-wrap gap-1.5 md:gap-2 items-center justify-center max-w-7xl mx-auto">
           {/* Инструменты */}
           <div className="flex gap-1.5 md:gap-2">
             <button
@@ -645,28 +645,28 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
         </div>
       )}
 
-      {/* Кнопки сохранения/отмены - фиксированные внизу */}
-      <div className="flex-shrink-0 w-full bg-[var(--matrix-black)] border-t-2 border-[var(--matrix-green-dark)] p-2">
-        <div className="flex gap-2 md:gap-4 justify-center max-w-7xl mx-auto">
-          <Button 
-            onClick={handleSave} 
-            size="lg" 
-            disabled={saving}
-            className="min-h-[48px] min-w-[140px] md:min-w-[160px] touch-manipulation flex-1 md:flex-none"
-          >
-            {saving ? <Loading text="СОХРАНЕНИЕ..." /> : 'СОХРАНИТЬ'}
-          </Button>
-          <Button 
-            onClick={onCancel} 
-            size="lg" 
-            variant="danger" 
-            disabled={saving}
-            className="min-h-[48px] min-w-[140px] md:min-w-[160px] touch-manipulation flex-1 md:flex-none"
-          >
-            ОТМЕНА
-          </Button>
-        </div>
-      </div>
+          {/* Кнопки сохранения/отмены - фиксированные внизу */}
+          <div className="flex-shrink-0 w-full bg-[var(--matrix-black)] bg-opacity-95 border-t-2 border-[var(--matrix-green-dark)] p-2 md:p-3">
+            <div className="flex gap-2 md:gap-4 justify-center max-w-7xl mx-auto">
+              <Button 
+                onClick={handleSave} 
+                size="lg" 
+                disabled={saving}
+                className="min-h-[52px] md:min-h-[48px] min-w-[140px] md:min-w-[160px] touch-manipulation flex-1 md:flex-none text-sm md:text-base"
+              >
+                {saving ? <Loading text="СОХРАНЕНИЕ..." /> : 'СОХРАНИТЬ'}
+              </Button>
+              <Button 
+                onClick={onCancel} 
+                size="lg" 
+                variant="danger" 
+                disabled={saving}
+                className="min-h-[52px] md:min-h-[48px] min-w-[140px] md:min-w-[160px] touch-manipulation flex-1 md:flex-none text-sm md:text-base"
+              >
+                ОТМЕНА
+              </Button>
+            </div>
+          </div>
 
       {/* Ошибка - отображается поверх */}
       {error && (

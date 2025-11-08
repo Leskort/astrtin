@@ -19,18 +19,20 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={`
-            w-full px-4 py-2 
+            w-full px-3 md:px-4 py-2.5 md:py-2 
             bg-[var(--matrix-black)] 
             border-2 border-[var(--matrix-green-dark)] 
             text-[var(--matrix-green-bright)] 
             font-mono
+            text-base
+            min-h-[48px] md:min-h-[44px]
             placeholder:text-[var(--matrix-green-dark)] 
             placeholder:opacity-50
             focus:outline-none 
             focus:border-[var(--matrix-green-bright)]
-            focus:button-glow
+            focus:ring-2 focus:ring-[var(--matrix-green-bright)] focus:ring-opacity-50
             transition-all duration-300
-            ${error ? 'border-[var(--matrix-red-neon)]' : ''}
+            ${error ? 'border-[var(--matrix-red-neon)] focus:border-[var(--matrix-red-neon)] focus:ring-[var(--matrix-red-neon)]' : ''}
             ${className}
           `}
           {...props}

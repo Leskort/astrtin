@@ -50,16 +50,16 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--matrix-black)] p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--matrix-black)] p-4 md:p-6">
       <div className="text-center fade-in max-w-md w-full">
-        <h1 className="text-6xl md:text-8xl font-mono text-[var(--matrix-green-bright)] text-glow-strong mb-8">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-mono text-[var(--matrix-green-bright)] text-glow-strong mb-6 md:mb-8">
           astrinn
         </h1>
         
         {/* Индикатор успешного распознавания */}
         {found && (
-          <div className="mb-6 animate-pulse">
-            <p className="text-[var(--matrix-green-bright)] font-mono text-lg text-glow-strong mb-2">
+          <div className="mb-4 md:mb-6 animate-pulse">
+            <p className="text-[var(--matrix-green-bright)] font-mono text-base md:text-lg text-glow-strong mb-2">
               ✓ РАСПОЗНАНО
             </p>
             <p className="text-[var(--matrix-green-soft)] font-mono text-xs">
@@ -70,8 +70,8 @@ export default function HomePage() {
         
         {/* Индикатор прослушивания */}
         {isListening && !error && !found && (
-          <div className="mb-6">
-            <div className="w-6 h-6 bg-[var(--matrix-green-bright)] rounded-full pulse mx-auto mb-2"></div>
+          <div className="mb-4 md:mb-6">
+            <div className="w-8 h-8 md:w-6 md:h-6 bg-[var(--matrix-green-bright)] rounded-full pulse mx-auto mb-2"></div>
             <p className="text-[var(--matrix-green-soft)] font-mono text-xs">
               Слушаю...
             </p>
@@ -80,11 +80,11 @@ export default function HomePage() {
 
         {/* Отображение распознанного текста (для отладки) */}
         {transcript && isListening && !found && (
-          <div className="mb-4 max-w-sm mx-auto">
+          <div className="mb-3 md:mb-4 max-w-sm mx-auto px-2">
             <p className="text-[var(--matrix-green-dark)] font-mono text-xs mb-2 break-words">
               Распознано: <span className="text-[var(--matrix-green-soft)]">{transcript}</span>
             </p>
-            <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50 mb-2">
+            <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50 mb-2 hidden md:block">
               Ищем: {process.env.NEXT_PUBLIC_VOICE_CODE || 'tron'}
             </p>
             <p className="text-[var(--matrix-cyan-neon)] font-mono text-xs">
@@ -95,14 +95,14 @@ export default function HomePage() {
 
         {/* Кнопка для перехода (временно для тестирования) */}
         {!found && (
-          <div className="mt-6">
+          <div className="mt-4 md:mt-6">
             <Button
               onClick={() => {
-                console.log('Кнопка нажата, вызываем handleSuccess');
                 handleSuccess();
               }}
               size="md"
               variant="secondary"
+              className="w-full sm:w-auto"
             >
               ПЕРЕЙТИ ВРУЧНУЮ
             </Button>
@@ -111,11 +111,13 @@ export default function HomePage() {
         
         {/* Ошибки или необходимость ручного запуска */}
         {(error || needsManualStart) && (
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             {error && (
-              <p className="text-[var(--matrix-red-neon)] font-mono text-sm mb-4 text-glow-red">
-                {error}
-              </p>
+              <div className="p-3 md:p-4 border-2 border-[var(--matrix-red-neon)] bg-[var(--matrix-black)] bg-opacity-50 mb-3 md:mb-4">
+                <p className="text-[var(--matrix-red-neon)] font-mono text-xs md:text-sm text-glow-red">
+                  {error}
+                </p>
+              </div>
             )}
             
             {/* Кнопка для запуска/повтора */}
@@ -126,7 +128,7 @@ export default function HomePage() {
                   startListening();
                 }}
                 size="md"
-                className="mt-4"
+                className="mt-3 md:mt-4 w-full sm:w-auto"
               >
                 НАЧАТЬ СЛУШАТЬ
               </Button>
@@ -138,7 +140,7 @@ export default function HomePage() {
                   window.location.reload();
                 }}
                 size="md"
-                className="mt-4"
+                className="mt-3 md:mt-4 w-full sm:w-auto"
               >
                 ПОВТОРИТЬ
               </Button>
@@ -148,13 +150,14 @@ export default function HomePage() {
 
         {/* Упрощенный режим для iPhone - кнопка для перехода */}
         {isIOS() && (isSupported === false || needsManualStart) && !isListening && !found && (
-          <div className="mt-6">
-            <p className="text-[var(--matrix-green-soft)] font-mono text-xs mb-4">
+          <div className="mt-4 md:mt-6">
+            <p className="text-[var(--matrix-green-soft)] font-mono text-xs mb-3 md:mb-4">
               Нажмите для продолжения
             </p>
             <Button
               onClick={handleSuccess}
               size="lg"
+              className="w-full sm:w-auto"
             >
               ПРОДОЛЖИТЬ
             </Button>
@@ -163,7 +166,7 @@ export default function HomePage() {
 
         {/* Информация о поддержке браузера */}
         {isSupported === false && !isIOS() && (
-          <p className="text-[var(--matrix-yellow-neon)] font-mono text-xs mt-4">
+          <p className="text-[var(--matrix-yellow-neon)] font-mono text-xs mt-3 md:mt-4 px-2">
             Используйте Chrome или Edge для лучшей поддержки
           </p>
         )}

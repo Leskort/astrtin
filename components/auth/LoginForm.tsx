@@ -49,7 +49,7 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
+    <form onSubmit={handleSubmit} className="w-full max-w-md space-y-5 md:space-y-6">
       <div className="space-y-4">
         <Input
           type="email"
@@ -75,9 +75,11 @@ export default function LoginForm() {
       </div>
 
       {error && (
-        <p className="text-[var(--matrix-red-neon)] font-mono text-sm text-glow-red">
-          {error}
-        </p>
+        <div className="p-3 md:p-4 border-2 border-[var(--matrix-red-neon)] bg-[var(--matrix-black)] bg-opacity-50">
+          <p className="text-[var(--matrix-red-neon)] font-mono text-xs md:text-sm text-glow-red">
+            {error}
+          </p>
+        </div>
       )}
 
       <Button

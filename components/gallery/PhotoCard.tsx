@@ -15,9 +15,11 @@ export default function PhotoCard({ photo, onSelect, onDelete }: PhotoCardProps)
 
   return (
     <div
-      className="relative group cursor-pointer"
+      className="relative group cursor-pointer touch-manipulation"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={() => setIsHovered(true)}
+      onTouchEnd={() => setTimeout(() => setIsHovered(false), 200)}
       onClick={() => onSelect(photo)}
     >
       <div
@@ -26,7 +28,8 @@ export default function PhotoCard({ photo, onSelect, onDelete }: PhotoCardProps)
           border-2 border-[var(--matrix-green-dark)]
           overflow-hidden
           transition-all duration-300
-          ${isHovered ? 'border-[var(--matrix-green-bright)] button-glow scale-105' : ''}
+          active:scale-95
+          ${isHovered ? 'border-[var(--matrix-green-bright)] button-glow scale-105 md:scale-105' : ''}
         `}
       >
         {!imageError ? (
@@ -63,9 +66,9 @@ export default function PhotoCard({ photo, onSelect, onDelete }: PhotoCardProps)
                 onDelete(photo.id);
               }
             }}
-            className="absolute top-2 right-2 w-8 h-8 bg-[var(--matrix-red-neon)] bg-opacity-80 hover:bg-opacity-100 border-2 border-[var(--matrix-red-neon)] flex items-center justify-center transition-all"
+            className="absolute top-2 right-2 w-10 h-10 md:w-8 md:h-8 bg-[var(--matrix-red-neon)] bg-opacity-90 hover:bg-opacity-100 active:bg-opacity-100 border-2 border-[var(--matrix-red-neon)] flex items-center justify-center transition-all touch-manipulation z-10 shadow-lg"
           >
-            <svg className="w-4 h-4 text-[var(--matrix-black)]" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 md:w-4 md:h-4 text-[var(--matrix-black)]" fill="currentColor" viewBox="0 0 24 24">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
             </svg>
           </button>

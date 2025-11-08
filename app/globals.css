@@ -22,6 +22,102 @@
   --foreground: var(--matrix-green-bright);
 }
 
+/* Matrix Scanlines Effect */
+@keyframes scanlines {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 10px;
+  }
+}
+
+.matrix-scanlines::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 255, 65, 0.03) 0px,
+    transparent 1px,
+    transparent 2px,
+    rgba(0, 255, 65, 0.03) 3px
+  );
+  pointer-events: none;
+  z-index: 9999;
+  animation: scanlines 8s linear infinite;
+}
+
+/* Matrix Glitch Effect */
+@keyframes glitch {
+  0%, 100% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+}
+
+.glitch {
+  animation: glitch 0.3s infinite;
+}
+
+/* Matrix Flicker Effect */
+@keyframes flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  41.99% {
+    opacity: 1;
+  }
+  42% {
+    opacity: 0;
+  }
+  43% {
+    opacity: 0;
+  }
+  43.01% {
+    opacity: 1;
+  }
+  45.99% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0;
+  }
+  46.9% {
+    opacity: 0;
+  }
+  46.91% {
+    opacity: 1;
+  }
+}
+
+.flicker {
+  animation: flicker 3s linear infinite;
+}
+
+/* Matrix Gradient Background */
+.matrix-bg {
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(0, 255, 65, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0, 255, 65, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(0, 255, 65, 0.02) 0%, transparent 50%),
+    var(--matrix-black);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -58,6 +154,28 @@ body {
   font-family: var(--font-share-tech-mono), 'Courier New', monospace;
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* Matrix background effect */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(0, 255, 65, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0, 255, 65, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(0, 255, 65, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Text glow effects */
@@ -78,6 +196,13 @@ body {
     0 0 70px var(--matrix-green-bright);
 }
 
+.text-glow-mobile {
+  text-shadow: 
+    0 0 3px var(--matrix-green-bright),
+    0 0 6px var(--matrix-green-bright),
+    0 0 9px var(--matrix-green-bright);
+}
+
 .text-glow-red {
   text-shadow: 
     0 0 5px var(--matrix-red-neon),
@@ -92,6 +217,22 @@ body {
     0 0 10px var(--matrix-green-bright),
     inset 0 0 5px var(--matrix-green-bright);
   transition: all 0.3s ease;
+  position: relative;
+}
+
+.button-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 1px solid var(--matrix-green-bright);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.button-glow:hover::before,
+.button-glow:focus::before {
+  opacity: 0.5;
 }
 
 .button-glow:hover {
@@ -100,12 +241,24 @@ body {
     0 0 20px var(--matrix-green-bright),
     0 0 30px var(--matrix-green-bright),
     inset 0 0 10px var(--matrix-green-bright);
+  transform: translateY(-1px);
 }
 
 .button-glow:active {
   box-shadow: 
     0 0 5px var(--matrix-green-bright),
     inset 0 0 20px var(--matrix-green-bright);
+  transform: translateY(0);
+}
+
+/* Mobile touch optimization */
+@media (hover: none) and (pointer: coarse) {
+  .button-glow:active {
+    box-shadow: 
+      0 0 15px var(--matrix-green-bright),
+      0 0 25px var(--matrix-green-bright),
+      inset 0 0 15px var(--matrix-green-bright);
+  }
 }
 
 /* Pulse animation */
@@ -154,4 +307,75 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--matrix-green-soft);
+  box-shadow: 0 0 5px var(--matrix-green-bright);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Larger touch targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing */
+  body {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Improved text readability */
+  .text-glow {
+    text-shadow: 
+      0 0 3px var(--matrix-green-bright),
+      0 0 6px var(--matrix-green-bright);
+  }
+  
+  .text-glow-strong {
+    text-shadow: 
+      0 0 5px var(--matrix-green-bright),
+      0 0 10px var(--matrix-green-bright),
+      0 0 15px var(--matrix-green-bright);
+  }
+}
+
+/* Matrix border gradient */
+.matrix-border {
+  position: relative;
+  border: 2px solid var(--matrix-green-dark);
+}
+
+.matrix-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid transparent;
+  background: linear-gradient(
+    45deg,
+    var(--matrix-green-bright),
+    transparent,
+    var(--matrix-green-bright)
+  );
+  border-radius: inherit;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.matrix-border:hover::before {
+  opacity: 0.3;
+}
+
+/* Smooth transitions */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--matrix-green-bright);
+  outline-offset: 2px;
 }

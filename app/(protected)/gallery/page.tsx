@@ -182,18 +182,19 @@ export default function GalleryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--matrix-black)] p-4">
+    <div className="min-h-screen bg-[var(--matrix-black)] p-2 sm:p-4">
       <div className="max-w-7xl mx-auto">
         {/* Заголовок */}
-        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-          <h1 className="text-3xl md:text-5xl font-mono text-[var(--matrix-green-bright)] text-glow-strong">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3 md:gap-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-mono text-[var(--matrix-green-bright)] text-glow-strong">
             ГАЛЕРЕЯ
           </h1>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto flex-wrap">
             <Button
               onClick={() => router.push('/upload')}
               size="md"
+              className="flex-1 sm:flex-none min-w-[100px]"
             >
               ЗАГРУЗИТЬ
             </Button>
@@ -201,6 +202,7 @@ export default function GalleryPage() {
               onClick={() => router.push('/camera')}
               size="md"
               variant="secondary"
+              className="flex-1 sm:flex-none min-w-[100px]"
             >
               КАМЕРА
             </Button>
@@ -208,6 +210,7 @@ export default function GalleryPage() {
               onClick={handleLogout}
               size="md"
               variant="danger"
+              className="flex-1 sm:flex-none min-w-[100px]"
             >
               ВЫХОД
             </Button>
@@ -216,8 +219,8 @@ export default function GalleryPage() {
 
         {/* Ошибка */}
         {error && (
-          <div className="mb-4 p-4 border-2 border-[var(--matrix-red-neon)]">
-            <p className="text-[var(--matrix-red-neon)] font-mono text-sm text-glow-red">
+          <div className="mb-3 md:mb-4 p-3 md:p-4 border-2 border-[var(--matrix-red-neon)] bg-[var(--matrix-black)] bg-opacity-50">
+            <p className="text-[var(--matrix-red-neon)] font-mono text-xs md:text-sm text-glow-red">
               {error}
             </p>
           </div>
