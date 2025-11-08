@@ -139,7 +139,7 @@ export async function listNetlifyPhotos(): Promise<Array<{ key: string; metadata
     const { blobs } = await store.list();
     
     const photos = await Promise.all(
-      blobs.map(async (blob) => {
+      blobs.map(async (blob: any) => {
         const metadata = await store.getMetadata(blob.key);
         return {
           key: blob.key,
