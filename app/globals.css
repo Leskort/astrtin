@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 
 :root {
   /* Matrix Colors */
@@ -26,8 +25,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: 'Share Tech Mono', 'Courier New', monospace;
-  --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+  --font-sans: var(--font-share-tech-mono), 'Courier New', monospace;
+  --font-mono: var(--font-share-tech-mono), 'Courier New', monospace;
   
   /* Matrix color palette */
   --color-matrix-black: var(--matrix-black);
@@ -56,7 +55,7 @@
 body {
   background: var(--matrix-black);
   color: var(--matrix-green-bright);
-  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  font-family: var(--font-share-tech-mono), 'Courier New', monospace;
   min-height: 100vh;
   overflow-x: hidden;
 }
