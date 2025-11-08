@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
+import { deleteFromNetlify } from '@/lib/storage-netlify';
 
 export async function GET(
   request: Request,
@@ -52,6 +53,23 @@ export async function DELETE(
       );
     }
 
+    // Приоритет: Netlify Blobs > локальное хранилище (development)
+    if (process.env.NETLIFY || process.env.NETLIFY_DEV) {
+      try {
+        // Проверяем, является ли ID ключом Netlify Blob (начинается с photo-)
+        if (photoId.startsWith('photo-')) {
+          await deleteFromNetlify(photoId);
+          return NextResponse.json({
+            success: true,
+            message: 'Фотография удалена',
+          });
+        }
+      } catch (err: any) {
+        console.error('Error deleting from Netlify Blobs:', err);
+        // Пробуем локальное хранилище
+      }
+    }
+
     // В development удаляем из файловой системы
     if (process.env.NODE_ENV === 'development') {
       try {
@@ -77,7 +95,6 @@ export async function DELETE(
           await unlink(filePath);
         }
 
-        // TODO: Удалить из БД
         return NextResponse.json({
           success: true,
           message: 'Фотография удалена',
@@ -94,10 +111,10 @@ export async function DELETE(
       }
     }
 
-    // В production нужно удалять из облачного хранилища и БД
+    // Если ничего не доступно
     return NextResponse.json(
-      { error: 'Удаление из облачного хранилища не настроено' },
-      { status: 501 }
+      { error: 'Не удалось удалить фотографию' },
+      { status: 500 }
     );
   } catch (error) {
     console.error('Delete error:', error);
