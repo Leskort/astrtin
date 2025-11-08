@@ -54,21 +54,32 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Устанавливаем размер canvas с учетом мобильных устройств
+      // На мобильных используем весь доступный экран для canvas
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-      const maxWidth = isMobile ? Math.min(window.innerWidth - 32, 800) : 1200; // 32px для отступов
-      const maxHeight = isMobile ? Math.min(window.innerHeight * 0.4, 600) : 800; // 40% высоты экрана на мобильных
+      
+      // Вычисляем доступное пространство: высота экрана минус панели инструментов
+      // Панель инструментов занимает примерно 80-100px, кнопки внизу ~70px, отступы ~20px
+      const toolbarHeight = isMobile ? 100 : 120;
+      const buttonsHeight = isMobile ? 70 : 80;
+      const padding = isMobile ? 20 : 40;
+      
+      const availableWidth = isMobile 
+        ? window.innerWidth - padding
+        : Math.min(window.innerWidth - padding * 2, 1400);
+      const availableHeight = isMobile 
+        ? window.innerHeight - toolbarHeight - buttonsHeight - padding
+        : Math.min(window.innerHeight - toolbarHeight - buttonsHeight - padding * 2, 900);
+      
+      // Масштабируем изображение чтобы оно вписывалось в доступное пространство
       let width = img.width;
       let height = img.height;
-
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width;
-        width = maxWidth;
-      }
-      if (height > maxHeight) {
-        width = (width * maxHeight) / height;
-        height = maxHeight;
-      }
+      
+      const scaleX = availableWidth / width;
+      const scaleY = availableHeight / height;
+      const scale = Math.min(scaleX, scaleY, 1); // Не увеличиваем больше оригинала
+      
+      width = Math.floor(width * scale);
+      height = Math.floor(height * scale);
 
       canvas.width = width;
       canvas.height = height;
@@ -174,12 +185,16 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
+    // Используем реальные размеры canvas, а не CSS размеры
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      x: Math.max(0, Math.min(x, canvas.width)),
+      y: Math.max(0, Math.min(y, canvas.height)),
     };
   };
 
@@ -415,138 +430,144 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
   };
 
   return (
-    <div className="fixed inset-0 bg-[var(--matrix-black)] bg-opacity-95 z-50 flex flex-col p-2 md:p-4 overflow-hidden">
-      <div className="flex-1 flex flex-col items-center justify-center max-w-7xl mx-auto w-full overflow-hidden">
-        {/* Панель инструментов - адаптирована для мобильных */}
-        <div className="w-full mb-2 md:mb-4 p-2 md:p-4 bg-[var(--matrix-gray-dark)] border-2 border-[var(--matrix-green-dark)] rounded overflow-x-auto">
-          <div className="flex flex-wrap gap-2 items-center justify-center min-w-max">
-            {/* Инструменты - увеличенные кнопки для мобильных */}
-            <div className="flex gap-2 flex-wrap justify-center">
-              <button
-                onClick={() => setTool('arrow')}
-                className={`px-4 md:px-4 py-3 md:py-2 border-2 font-mono text-sm md:text-sm transition-all min-h-[48px] min-w-[100px] touch-manipulation ${
-                  tool === 'arrow'
-                    ? 'border-[var(--matrix-green-bright)] bg-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)]'
-                    : 'border-[var(--matrix-green-dark)] text-[var(--matrix-green-dark)] active:border-[var(--matrix-green-bright)] active:bg-[var(--matrix-green-dark)]'
-                }`}
-              >
-                → СТРЕЛКА
-              </button>
-              <button
-                onClick={() => setTool('text')}
-                className={`px-4 md:px-4 py-3 md:py-2 border-2 font-mono text-sm md:text-sm transition-all min-h-[48px] min-w-[100px] touch-manipulation ${
-                  tool === 'text'
-                    ? 'border-[var(--matrix-green-bright)] bg-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)]'
-                    : 'border-[var(--matrix-green-dark)] text-[var(--matrix-green-dark)] active:border-[var(--matrix-green-bright)] active:bg-[var(--matrix-green-dark)]'
-                }`}
-              >
-                T ТЕКСТ
-              </button>
-              <button
-                onClick={() => setTool('marker')}
-                className={`px-4 md:px-4 py-3 md:py-2 border-2 font-mono text-sm md:text-sm transition-all min-h-[48px] min-w-[100px] touch-manipulation ${
-                  tool === 'marker'
-                    ? 'border-[var(--matrix-green-bright)] bg-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)]'
-                    : 'border-[var(--matrix-green-dark)] text-[var(--matrix-green-dark)] active:border-[var(--matrix-green-bright)] active:bg-[var(--matrix-green-dark)]'
-                }`}
-              >
-                ● МАРКЕР
-              </button>
-            </div>
+    <div className="fixed inset-0 bg-[var(--matrix-black)] z-50 flex flex-col overflow-hidden" style={{ height: '100vh' }}>
+      {/* Панель инструментов - фиксированная сверху, компактная */}
+      <div className="flex-shrink-0 w-full bg-[var(--matrix-black)] border-b-2 border-[var(--matrix-green-dark)] p-2">
+        <div className="flex flex-wrap gap-2 items-center justify-center max-w-7xl mx-auto">
+          {/* Инструменты */}
+          <div className="flex gap-1.5 md:gap-2">
+            <button
+              onClick={() => setTool('arrow')}
+              className={`px-2 md:px-3 py-1.5 md:py-2 border-2 font-mono text-xs md:text-sm transition-all min-h-[40px] md:min-h-[44px] min-w-[70px] md:min-w-[90px] touch-manipulation ${
+                tool === 'arrow'
+                  ? 'border-[var(--matrix-green-bright)] bg-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)]'
+                  : 'border-[var(--matrix-green-dark)] text-[var(--matrix-green-dark)] active:border-[var(--matrix-green-bright)] active:bg-[var(--matrix-green-dark)]'
+              }`}
+            >
+              → СТРЕЛКА
+            </button>
+            <button
+              onClick={() => setTool('text')}
+              className={`px-2 md:px-3 py-1.5 md:py-2 border-2 font-mono text-xs md:text-sm transition-all min-h-[40px] md:min-h-[44px] min-w-[70px] md:min-w-[90px] touch-manipulation ${
+                tool === 'text'
+                  ? 'border-[var(--matrix-green-bright)] bg-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)]'
+                  : 'border-[var(--matrix-green-dark)] text-[var(--matrix-green-dark)] active:border-[var(--matrix-green-bright)] active:bg-[var(--matrix-green-dark)]'
+              }`}
+            >
+              T ТЕКСТ
+            </button>
+            <button
+              onClick={() => setTool('marker')}
+              className={`px-2 md:px-3 py-1.5 md:py-2 border-2 font-mono text-xs md:text-sm transition-all min-h-[40px] md:min-h-[44px] min-w-[70px] md:min-w-[90px] touch-manipulation ${
+                tool === 'marker'
+                  ? 'border-[var(--matrix-green-bright)] bg-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)]'
+                  : 'border-[var(--matrix-green-dark)] text-[var(--matrix-green-dark)] active:border-[var(--matrix-green-bright)] active:bg-[var(--matrix-green-dark)]'
+              }`}
+            >
+              ● МАРКЕР
+            </button>
+          </div>
 
-            {/* Цвета - увеличенные для мобильных */}
-            <div className="flex gap-2 items-center flex-wrap justify-center">
-              <span className="text-[var(--matrix-green-dark)] font-mono text-xs md:text-sm">ЦВЕТ:</span>
-              {['#00ff00', '#00ffff', '#ffff00', '#ff00ff', '#ff0000', '#ffffff'].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={`w-10 h-10 md:w-8 md:h-8 rounded-full border-2 transition-all touch-manipulation ${
-                    color === c ? 'scale-110 ring-2 ring-[var(--matrix-green-bright)]' : ''
-                  }`}
-                  style={{ backgroundColor: c, borderColor: c === '#ffffff' ? '#cccccc' : c }}
-                />
-              ))}
-            </div>
-
-            {/* Толщина линии - увеличенный слайдер для мобильных */}
-            <div className="flex gap-2 items-center flex-wrap justify-center">
-              <span className="text-[var(--matrix-green-dark)] font-mono text-xs md:text-sm">ТОЛЩИНА:</span>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={lineWidth}
-                onChange={(e) => setLineWidth(Number(e.target.value))}
-                className="w-32 md:w-24 h-8"
-                style={{ minWidth: '128px' }}
+          {/* Цвета - компактные */}
+          <div className="flex gap-1.5 md:gap-2 items-center">
+            <span className="text-[var(--matrix-green-dark)] font-mono text-xs hidden md:inline">ЦВЕТ:</span>
+            {['#00ff00', '#00ffff', '#ffff00', '#ff00ff', '#ff0000', '#ffffff'].map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                className={`w-8 h-8 md:w-7 md:h-7 rounded-full border-2 transition-all touch-manipulation ${
+                  color === c ? 'scale-110 ring-2 ring-[var(--matrix-green-bright)]' : ''
+                }`}
+                style={{ backgroundColor: c, borderColor: c === '#ffffff' ? '#cccccc' : c }}
               />
-              <span className="text-[var(--matrix-green-dark)] font-mono text-sm w-10 text-center">{lineWidth}</span>
-            </div>
+            ))}
+          </div>
 
-            {/* История - увеличенные кнопки для мобильных */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleUndo}
-                disabled={history.length === 0}
-                className={`px-4 md:px-4 py-3 md:py-2 border-2 font-mono text-sm transition-all min-h-[48px] min-w-[100px] touch-manipulation ${
-                  history.length === 0
-                    ? 'border-[var(--matrix-gray-dark)] text-[var(--matrix-gray-dark)] cursor-not-allowed opacity-50'
-                    : 'border-[var(--matrix-yellow-neon)] text-[var(--matrix-yellow-neon)] active:bg-[var(--matrix-yellow-neon)] active:text-[var(--matrix-black)]'
-                }`}
-                title="Назад (Undo)"
-              >
-                ↶ НАЗАД
-              </button>
-              <button
-                onClick={handleRedo}
-                disabled={redoHistory.length === 0}
-                className={`px-4 md:px-4 py-3 md:py-2 border-2 font-mono text-sm transition-all min-h-[48px] min-w-[100px] touch-manipulation ${
-                  redoHistory.length === 0
-                    ? 'border-[var(--matrix-gray-dark)] text-[var(--matrix-gray-dark)] cursor-not-allowed opacity-50'
-                    : 'border-[var(--matrix-cyan-neon)] text-[var(--matrix-cyan-neon)] active:bg-[var(--matrix-cyan-neon)] active:text-[var(--matrix-black)]'
-                }`}
-                title="Вперед (Redo)"
-              >
-                ↷ ВПЕРЕД
-              </button>
-            </div>
+          {/* Толщина линии - компактный слайдер */}
+          <div className="flex gap-1.5 md:gap-2 items-center">
+            <span className="text-[var(--matrix-green-dark)] font-mono text-xs hidden md:inline">ТОЛЩИНА:</span>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={lineWidth}
+              onChange={(e) => setLineWidth(Number(e.target.value))}
+              className="w-20 md:w-24 h-6 touch-manipulation"
+            />
+            <span className="text-[var(--matrix-green-dark)] font-mono text-xs w-6 text-center">{lineWidth}</span>
+          </div>
+
+          {/* История - компактные кнопки */}
+          <div className="flex gap-1.5 md:gap-2">
+            <button
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              className={`px-2 md:px-3 py-1.5 md:py-2 border-2 font-mono text-xs transition-all min-h-[40px] md:min-h-[44px] min-w-[60px] md:min-w-[80px] touch-manipulation ${
+                history.length === 0
+                  ? 'border-[var(--matrix-gray-dark)] text-[var(--matrix-gray-dark)] cursor-not-allowed opacity-50'
+                  : 'border-[var(--matrix-yellow-neon)] text-[var(--matrix-yellow-neon)] active:bg-[var(--matrix-yellow-neon)] active:text-[var(--matrix-black)]'
+              }`}
+              title="Назад (Undo)"
+            >
+              ↶
+            </button>
+            <button
+              onClick={handleRedo}
+              disabled={redoHistory.length === 0}
+              className={`px-2 md:px-3 py-1.5 md:py-2 border-2 font-mono text-xs transition-all min-h-[40px] md:min-h-[44px] min-w-[60px] md:min-w-[80px] touch-manipulation ${
+                redoHistory.length === 0
+                  ? 'border-[var(--matrix-gray-dark)] text-[var(--matrix-gray-dark)] cursor-not-allowed opacity-50'
+                  : 'border-[var(--matrix-cyan-neon)] text-[var(--matrix-cyan-neon)] active:bg-[var(--matrix-cyan-neon)] active:text-[var(--matrix-black)]'
+              }`}
+              title="Вперед (Redo)"
+            >
+              ↷
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Canvas - адаптирован для мобильных */}
-        <div className="flex-1 flex items-center justify-center w-full overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-          <canvas
-            ref={canvasRef}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={() => setIsDrawing(false)} // Останавливаем рисование если мышь вышла
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onTouchCancel={() => setIsDrawing(false)} // Останавливаем рисование при отмене touch
-            className="border-2 border-[var(--matrix-green-bright)] max-w-full max-h-full cursor-crosshair"
-            style={{ 
-              touchAction: 'none',
-              userSelect: 'none',
-              WebkitUserSelect: 'none',
-              msUserSelect: 'none',
-            }}
-          />
-        </div>
+      {/* Canvas - на весь экран */}
+      <div className="flex-1 flex items-center justify-center w-full overflow-hidden p-2" style={{ minHeight: 0 }}>
+        <canvas
+          ref={canvasRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={() => setIsDrawing(false)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={() => setIsDrawing(false)}
+          className="border-2 border-[var(--matrix-green-bright)] max-w-full max-h-full cursor-crosshair"
+          style={{ 
+            touchAction: 'none',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            msUserSelect: 'none',
+            objectFit: 'contain',
+          }}
+        />
+      </div>
 
-        {/* Ввод текста - адаптирован для мобильных */}
-        {textPosition && (
+      {/* Ввод текста - центрированное модальное окно */}
+      {textPosition && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 bg-[var(--matrix-black)] bg-opacity-90 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setTextPosition(null);
+              setTextInput('');
+            }
+          }}
+        >
           <div
-            className="fixed md:absolute p-3 md:p-2 bg-[var(--matrix-black)] border-2 border-[var(--matrix-green-bright)] z-50"
-            style={{ 
-              left: typeof window !== 'undefined' && window.innerWidth < 768 ? '50%' : `${textPosition.x + 20}px`,
-              top: typeof window !== 'undefined' && window.innerWidth < 768 ? '50%' : `${textPosition.y + 20}px`,
-              transform: typeof window !== 'undefined' && window.innerWidth < 768 ? 'translate(-50%, -50%)' : 'none',
-              maxWidth: typeof window !== 'undefined' && window.innerWidth < 768 ? '90%' : 'auto',
-            }}
+            className="bg-[var(--matrix-gray-dark)] border-2 border-[var(--matrix-green-bright)] p-4 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
           >
+            <p className="text-[var(--matrix-green-bright)] font-mono text-sm mb-3 text-center">
+              ВВЕДИТЕ ТЕКСТ
+            </p>
             <input
               type="text"
               value={textInput}
@@ -558,15 +579,15 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
                   setTextInput('');
                 }
               }}
-              className="bg-[var(--matrix-gray-dark)] border border-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)] font-mono text-base md:text-sm px-3 md:px-2 py-2 md:py-1 outline-none focus:border-[var(--matrix-green-bright)] w-full md:w-40 mb-2 md:mb-0"
+              className="bg-[var(--matrix-black)] border border-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)] font-mono text-base px-3 py-2 outline-none focus:border-[var(--matrix-green-bright)] w-full mb-3"
               placeholder="Введите текст..."
               autoFocus
             />
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2">
               <Button 
                 onClick={handleTextSubmit} 
                 size="md" 
-                className="flex-1 md:flex-none min-h-[44px] touch-manipulation"
+                className="flex-1 min-h-[44px] touch-manipulation"
               >
                 ДОБАВИТЬ
               </Button>
@@ -577,28 +598,23 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
                 }} 
                 size="md" 
                 variant="danger"
-                className="flex-1 md:flex-none min-h-[44px] touch-manipulation"
+                className="flex-1 min-h-[44px] touch-manipulation"
               >
                 ОТМЕНА
               </Button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Ошибка */}
-        {error && (
-          <p className="text-[var(--matrix-red-neon)] font-mono text-sm text-glow-red mt-2">
-            {error}
-          </p>
-        )}
-
-        {/* Кнопки сохранения/отмены - увеличенные для мобильных */}
-        <div className="mt-2 md:mt-4 flex gap-2 md:gap-4 justify-center w-full flex-wrap">
+      {/* Кнопки сохранения/отмены - фиксированные внизу */}
+      <div className="flex-shrink-0 w-full bg-[var(--matrix-black)] border-t-2 border-[var(--matrix-green-dark)] p-2">
+        <div className="flex gap-2 md:gap-4 justify-center max-w-7xl mx-auto">
           <Button 
             onClick={handleSave} 
             size="lg" 
             disabled={saving}
-            className="min-h-[48px] min-w-[140px] touch-manipulation flex-1 md:flex-none"
+            className="min-h-[48px] min-w-[140px] md:min-w-[160px] touch-manipulation flex-1 md:flex-none"
           >
             {saving ? <Loading text="СОХРАНЕНИЕ..." /> : 'СОХРАНИТЬ'}
           </Button>
@@ -607,18 +623,21 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
             size="lg" 
             variant="danger" 
             disabled={saving}
-            className="min-h-[48px] min-w-[140px] touch-manipulation flex-1 md:flex-none"
+            className="min-h-[48px] min-w-[140px] md:min-w-[160px] touch-manipulation flex-1 md:flex-none"
           >
             ОТМЕНА
           </Button>
         </div>
-
-        {saving && (
-          <div className="mt-2">
-            <Loading text="СОХРАНЕНИЕ..." />
-          </div>
-        )}
       </div>
+
+      {/* Ошибка - отображается поверх */}
+      {error && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[60] bg-[var(--matrix-black)] border-2 border-[var(--matrix-red-neon)] p-3 rounded max-w-[90%]">
+          <p className="text-[var(--matrix-red-neon)] font-mono text-sm text-glow-red text-center">
+            {error}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
