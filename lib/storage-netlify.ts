@@ -11,16 +11,27 @@ export interface StorageResult {
 
 export async function uploadToNetlify(buffer: Buffer, fileName: string, mimeType: string): Promise<StorageResult> {
   try {
+    console.log('Initializing Netlify Blobs store...');
+    
+    // Проверяем доступность getStore
+    if (typeof getStore !== 'function') {
+      throw new Error('getStore is not available. Make sure @netlify/blobs is installed and Netlify Blobs is enabled.');
+    }
+    
     const store = getStore({
       name: 'astrinn-photos',
       consistency: 'strong',
     });
+    
+    console.log('Store initialized, uploading file...');
     const timestamp = Date.now();
     const fileKey = `photo-${timestamp}-${fileName}`;
 
+    // Конвертируем Buffer в Uint8Array для Netlify Blobs
+    const uint8Array = new Uint8Array(buffer);
+    
     // Netlify Blobs принимает Buffer, Uint8Array, или строку
-    // Используем Buffer напрямую
-    await store.set(fileKey, buffer as any, {
+    await store.set(fileKey, uint8Array, {
       metadata: {
         fileName,
         mimeType,
@@ -41,7 +52,20 @@ export async function uploadToNetlify(buffer: Buffer, fileName: string, mimeType
     };
   } catch (error: any) {
     console.error('Netlify Blobs upload error:', error);
-    throw new Error(`Ошибка сохранения в Netlify: ${error.message}`);
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
+    
+    // Более детальное сообщение об ошибке
+    let errorMessage = 'Ошибка сохранения в Netlify Blobs';
+    if (error?.message) {
+      errorMessage += `: ${error.message}`;
+    }
+    if (error?.code) {
+      errorMessage += ` (код: ${error.code})`;
+    }
+    
+    throw new Error(errorMessage);
   }
 }
 
@@ -113,15 +137,24 @@ export async function listNetlifyPhotos(): Promise<Array<{ key: string; metadata
 export function isNetlifyConfigured(): boolean {
   // Netlify Blobs доступен автоматически в Netlify Functions
   // Проверяем, что мы находимся в среде Netlify
-  // Также проверяем, что пакет @netlify/blobs доступен
   try {
     const hasNetlifyEnv = !!process.env.NETLIFY || !!process.env.NETLIFY_DEV;
-    // Проверяем, что getStore доступен (не выбросит ошибку при импорте)
-    if (hasNetlifyEnv && typeof getStore === 'function') {
+    
+    // Проверяем, что getStore доступен
+    if (typeof getStore !== 'function') {
+      console.log('Netlify Blobs: getStore is not a function');
+      return false;
+    }
+    
+    // Если есть переменные окружения Netlify и getStore доступен, считаем что настроено
+    if (hasNetlifyEnv) {
+      console.log('Netlify Blobs: Environment detected, getStore available');
       return true;
     }
+    
+    console.log('Netlify Blobs: Environment variables not found');
     return false;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error checking Netlify Blobs availability:', error);
     return false;
   }
