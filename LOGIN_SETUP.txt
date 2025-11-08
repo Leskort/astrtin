@@ -1,0 +1,32 @@
+╔═══════════════════════════════════════════════════════════════╗
+║  НАСТРОЙКА ЛОГИНА                                             ║
+╚═══════════════════════════════════════════════════════════════╝
+
+Для работы логина добавьте в .env.local и Netlify:
+
+ADMIN_EMAIL=your-email@example.com
+ADMIN_PASSWORD=your-secure-password
+
+Или для более безопасного варианта (с хешем):
+
+ADMIN_EMAIL=your-email@example.com
+ADMIN_PASSWORD_HASH=сгенерированный-хеш-пароля
+
+Для генерации хеша пароля:
+node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('your-password', 10).then(h => console.log(h))"
+
+═══════════════════════════════════════════════════════════════
+
+ДЛЯ NETLIFY (добавьте в Environment variables):
+
+ADMIN_EMAIL=your-email@example.com
+ADMIN_PASSWORD=your-secure-password
+
+═══════════════════════════════════════════════════════════════
+
+ПО УМОЛЧАНИЮ (для тестирования):
+Email: admin@astrinn.com
+Password: admin123
+
+⚠️ ОБЯЗАТЕЛЬНО ИЗМЕНИТЕ ПАРОЛЬ В ПРОДАКШЕНЕ!
+
