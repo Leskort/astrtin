@@ -142,7 +142,29 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
 
   useEffect(() => {
     redrawCanvas();
-  }, [drawings]);
+    
+    // Рисуем текущий путь маркера поверх
+    if (isDrawing && tool === 'marker' && currentPath.length > 1) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(currentPath[0].x, currentPath[0].y);
+      for (let i = 1; i < currentPath.length; i++) {
+        ctx.lineTo(currentPath[i].x, currentPath[i].y);
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth * 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }, [drawings, currentPath, isDrawing, tool, color, lineWidth]);
 
   // Получение координат мыши относительно canvas
   const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -193,31 +215,16 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Временная отрисовка
-    redrawCanvas();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
     if (tool === 'arrow') {
+      // Временная отрисовка стрелки
+      redrawCanvas();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = 'round';
       drawArrow(ctx, startPos.x, startPos.y, pos.x, pos.y);
     } else if (tool === 'marker') {
-      // Добавляем точку в текущий путь и рисуем линию
-      const newPath = [...currentPath, pos];
-      setCurrentPath(newPath);
-      
-      if (newPath.length > 1) {
-        ctx.globalAlpha = 0.6;
-        ctx.beginPath();
-        ctx.moveTo(newPath[0].x, newPath[0].y);
-        for (let i = 1; i < newPath.length; i++) {
-          ctx.lineTo(newPath[i].x, newPath[i].y);
-        }
-        ctx.lineWidth = lineWidth * 2;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
+      // Добавляем точку в текущий путь (отрисовка произойдет в useEffect)
+      setCurrentPath([...currentPath, pos]);
     }
   };
 
