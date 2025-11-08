@@ -45,7 +45,6 @@ export async function uploadToSupabase(buffer: Buffer, fileName: string, mimeTyp
 
   if (error) {
     console.error('Supabase upload error:', error);
-    console.error('Error code:', error.statusCode);
     console.error('Error message:', error.message);
     
     // Более детальное сообщение об ошибке
