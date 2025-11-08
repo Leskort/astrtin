@@ -39,6 +39,7 @@ export async function uploadToNetlify(buffer: Buffer, fileName: string, mimeType
     });
 
     console.log('File saved to Netlify Blobs:', fileKey);
+    console.log('File size:', buffer.length, 'bytes');
 
     // Возвращаем URL для доступа к файлу через API
     const url = `/api/photos/blob/${encodeURIComponent(fileKey)}`;
