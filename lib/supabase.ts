@@ -2,14 +2,21 @@ import { createClient } from '@supabase/supabase-js';
 
 // Инициализация Supabase клиента
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+// Используем service_role ключ для серверной загрузки
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 if (!supabaseUrl || !supabaseKey) {
   console.warn('Supabase не настроен. Добавьте NEXT_PUBLIC_SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY в переменные окружения.');
+  console.warn('ВАЖНО: Используйте service_role ключ, а не anon ключ!');
 }
 
 export const supabase = supabaseUrl && supabaseKey 
-  ? createClient(supabaseUrl, supabaseKey)
+  ? createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
   : null;
 
 export async function uploadToSupabase(buffer: Buffer, fileName: string, mimeType: string): Promise<string> {

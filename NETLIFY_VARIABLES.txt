@@ -1,0 +1,35 @@
+╔═══════════════════════════════════════════════════════════════╗
+║  ПЕРЕМЕННЫЕ ДЛЯ NETLIFY                                       ║
+╚═══════════════════════════════════════════════════════════════╝
+
+ВАШИ ДАННЫЕ SUPABASE:
+─────────────────────────────────────────────────────────────────
+URL проекта: https://wgjlkptioiipijbsxvvu.supabase.co
+
+⚠️ ВАЖНО: Вы предоставили anon ключ, но нужен service_role ключ!
+
+─────────────────────────────────────────────────────────────────
+
+ДОБАВЬТЕ В NETLIFY (Site settings → Environment variables):
+
+1. NEXT_PUBLIC_SUPABASE_URL
+   Value: https://wgjlkptioiipijbsxvvu.supabase.co
+
+2. SUPABASE_SERVICE_ROLE_KEY
+   Value: [ВАШ SERVICE_ROLE КЛЮЧ - НЕ ANON!]
+   
+   Как получить service_role ключ:
+   • Supabase Dashboard → Settings → API
+   • Найдите раздел "Project API keys"
+   • Найдите ключ "service_role" (НЕ "anon"!)
+   • Нажмите "Reveal" чтобы показать
+   • Скопируйте весь ключ
+
+─────────────────────────────────────────────────────────────────
+
+ПОСЛЕ ДОБАВЛЕНИЯ:
+• Deploys → Trigger deploy → Deploy site
+• Проверьте загрузку фотографий
+
+Подробная инструкция: HOW_TO_GET_SERVICE_ROLE_KEY.md
+
