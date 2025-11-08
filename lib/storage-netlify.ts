@@ -156,45 +156,18 @@ export async function listNetlifyPhotos(): Promise<Array<{ key: string; metadata
 }
 
 export function isNetlifyConfigured(): boolean {
-  // Netlify Blobs доступен автоматически в Netlify Functions
-  // Проверяем различные признаки того, что мы на Netlify
+  // Всегда возвращаем true, чтобы код пытался использовать Netlify Blobs
+  // Если он не доступен, ошибка будет поймана при попытке использования
+  // Проверяем только, что getStore доступен
   try {
-    // Проверяем переменные окружения Netlify
-    const hasNetlifyEnv = !!process.env.NETLIFY || !!process.env.NETLIFY_DEV;
-    
-    // Проверяем переменные окружения Next.js на Netlify
-    const hasNetlifyContext = !!process.env.NETLIFY_CONTEXT || !!process.env.CONTEXT;
-    
-    // Проверяем, что getStore доступен
     if (typeof getStore !== 'function') {
       console.log('Netlify Blobs: getStore is not a function');
       return false;
     }
     
-    // Если мы в production и getStore доступен, пробуем использовать Netlify Blobs
-    // На Netlify это должно работать автоматически
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    if (hasNetlifyEnv || hasNetlifyContext || isProduction) {
-      console.log('Netlify Blobs: Environment detected', {
-        NETLIFY: !!process.env.NETLIFY,
-        NETLIFY_DEV: !!process.env.NETLIFY_DEV,
-        NETLIFY_CONTEXT: !!process.env.NETLIFY_CONTEXT,
-        CONTEXT: process.env.CONTEXT,
-        NODE_ENV: process.env.NODE_ENV,
-        getStoreAvailable: typeof getStore === 'function',
-      });
-      return true;
-    }
-    
-    console.log('Netlify Blobs: Environment variables not found', {
-      NETLIFY: process.env.NETLIFY,
-      NETLIFY_DEV: process.env.NETLIFY_DEV,
-      NETLIFY_CONTEXT: process.env.NETLIFY_CONTEXT,
-      CONTEXT: process.env.CONTEXT,
-      NODE_ENV: process.env.NODE_ENV,
-    });
-    return false;
+    // Если getStore доступен, считаем что Netlify Blobs может работать
+    // На Netlify он должен работать автоматически
+    return true;
   } catch (error: any) {
     console.error('Error checking Netlify Blobs availability:', error);
     return false;

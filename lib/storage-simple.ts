@@ -11,40 +11,36 @@ export interface StorageResult {
 
 export async function uploadPhoto(buffer: Buffer, fileName: string, mimeType: string): Promise<StorageResult> {
   console.log('=== Storage: Netlify Blobs ===');
-  console.log('Environment:', {
+  console.log('Environment variables:', {
     NODE_ENV: process.env.NODE_ENV,
     NETLIFY: process.env.NETLIFY,
     NETLIFY_DEV: process.env.NETLIFY_DEV,
     NETLIFY_CONTEXT: process.env.NETLIFY_CONTEXT,
     CONTEXT: process.env.CONTEXT,
+    AWS_LAMBDA_FUNCTION_NAME: process.env.AWS_LAMBDA_FUNCTION_NAME,
+    VERCEL: process.env.VERCEL,
   });
   
-  // Пробуем использовать Netlify Blobs в любом случае
-  // Если он не доступен, получим ошибку при попытке использования
+  // Всегда пробуем использовать Netlify Blobs
+  // На Netlify он должен работать автоматически, даже если переменные окружения не установлены
   try {
-    console.log('Attempting to upload to Netlify Blobs...');
+    console.log('Attempting to upload to Netlify Blobs (no pre-check)...');
     const result = await uploadToNetlify(buffer, fileName, mimeType);
     console.log('Netlify Blobs upload successful:', result.url);
     return result;
   } catch (error: any) {
     console.error('Netlify Blobs upload failed:', error);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     console.error('Error details:', {
       message: error?.message,
       code: error?.code,
       name: error?.name,
-      stack: error?.stack,
+      constructor: error?.constructor?.name,
+      stack: error?.stack?.substring(0, 500),
     });
     
-    // Проверяем, может быть это ошибка конфигурации
-    if (error?.message?.includes('getStore') || error?.message?.includes('not available')) {
-      const errorMsg = 'Netlify Blobs не доступен. Убедитесь, что приложение развернуто на Netlify и пакет @netlify/blobs установлен.';
-      console.error('=== Configuration error ===');
-      console.error(errorMsg);
-      throw new Error(errorMsg);
-    }
-    
-    const errorMsg = error?.message || 'Ошибка сохранения в Netlify Blobs. Попробуйте еще раз или обратитесь к администратору.';
-    throw new Error(errorMsg);
+    // Передаем детальное сообщение об ошибке
+    throw error;
   }
 }
 
