@@ -3,15 +3,19 @@
 import { useState, useRef } from 'react';
 import Button from '@/components/ui/Button';
 import Loading from '@/components/ui/Loading';
+import PhotoEditor from '@/components/gallery/PhotoEditor';
 
 interface CameraCaptureProps {
   onCaptureComplete?: () => void;
+  onEditComplete?: (file: File) => Promise<void>;
 }
 
-export default function CameraCapture({ onCaptureComplete }: CameraCaptureProps) {
+export default function CameraCapture({ onCaptureComplete, onEditComplete }: CameraCaptureProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [capturedFile, setCapturedFile] = useState<File | null>(null);
+  const [showEditor, setShowEditor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,6 +28,9 @@ export default function CameraCapture({ onCaptureComplete }: CameraCaptureProps)
       return;
     }
 
+    // Сохраняем файл и показываем редактор
+    setCapturedFile(file);
+    
     // Создаем превью
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -31,8 +38,8 @@ export default function CameraCapture({ onCaptureComplete }: CameraCaptureProps)
     };
     reader.readAsDataURL(file);
 
-    // Автоматически загружаем после выбора
-    await uploadPhoto(file);
+    // Открываем редактор для редактирования
+    setShowEditor(true);
   };
 
   const uploadPhoto = async (file: File) => {
@@ -55,6 +62,8 @@ export default function CameraCapture({ onCaptureComplete }: CameraCaptureProps)
 
       // Успешная загрузка
       setPreview(null);
+      setCapturedFile(null);
+      setShowEditor(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -66,8 +75,18 @@ export default function CameraCapture({ onCaptureComplete }: CameraCaptureProps)
     }
   };
 
+  const handleEditSave = async (editedFile: File) => {
+    if (onEditComplete) {
+      await onEditComplete(editedFile);
+    } else {
+      await uploadPhoto(editedFile);
+    }
+  };
+
   const handleRetake = () => {
     setPreview(null);
+    setCapturedFile(null);
+    setShowEditor(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -85,8 +104,8 @@ export default function CameraCapture({ onCaptureComplete }: CameraCaptureProps)
         className="hidden"
       />
 
-      {/* Превью фотографии */}
-      {preview && (
+      {/* Превью фотографии - показываем только если редактор не открыт */}
+      {preview && !showEditor && (
         <div className="relative w-full aspect-[4/3] bg-[var(--matrix-gray-dark)] border-2 border-[var(--matrix-green-bright)] overflow-hidden">
           <img
             src={preview}
@@ -143,9 +162,9 @@ export default function CameraCapture({ onCaptureComplete }: CameraCaptureProps)
         </div>
       )}
 
-      {/* Кнопки управления */}
-      <div className="flex flex-wrap gap-4 justify-center">
-        {!preview ? (
+      {/* Кнопки управления - показываем только если редактор не открыт */}
+      {!showEditor && (
+        <div className="flex flex-wrap gap-4 justify-center">
           <Button
             onClick={() => fileInputRef.current?.click()}
             size="lg"
@@ -154,30 +173,8 @@ export default function CameraCapture({ onCaptureComplete }: CameraCaptureProps)
           >
             ОТКРЫТЬ КАМЕРУ
           </Button>
-        ) : (
-          <>
-            <Button
-              onClick={() => {
-                if (fileInputRef.current?.files?.[0]) {
-                  uploadPhoto(fileInputRef.current.files[0]);
-                }
-              }}
-              size="lg"
-              disabled={uploading}
-            >
-              {uploading ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ'}
-            </Button>
-            <Button
-              onClick={handleRetake}
-              size="md"
-              variant="secondary"
-              disabled={uploading}
-            >
-              ПЕРЕСНЯТЬ
-            </Button>
-          </>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Подсказка */}
       {!preview && !uploading && (
@@ -186,9 +183,26 @@ export default function CameraCapture({ onCaptureComplete }: CameraCaptureProps)
             На iPhone откроется системная камера
           </p>
           <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-30">
-            После съемки фотография автоматически загрузится
+            После съемки откроется редактор для редактирования
           </p>
         </div>
+      )}
+
+      {/* Редактор фотографии */}
+      {showEditor && capturedFile && preview && (
+        <PhotoEditor
+          photo={{
+            id: 'temp-camera-photo',
+            userId: '',
+            url: preview,
+            fileName: capturedFile.name,
+            size: capturedFile.size,
+            mimeType: capturedFile.type,
+            uploadedAt: new Date(),
+          }}
+          onSave={handleEditSave}
+          onCancel={handleRetake}
+        />
       )}
     </div>
   );

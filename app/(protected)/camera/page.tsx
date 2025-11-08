@@ -8,10 +8,34 @@ export default function CameraPage() {
   const router = useRouter();
 
   const handleCaptureComplete = () => {
-    // Переход в галерею после успешной съемки
+    // Переход в галерею после успешной съемки и редактирования
     setTimeout(() => {
       router.push('/gallery');
     }, 1000);
+  };
+
+  const handleEditComplete = async (file: File) => {
+    // Загружаем отредактированную фотографию
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/photos/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка загрузки');
+      }
+
+      // Успешная загрузка - переходим в галерею
+      handleCaptureComplete();
+    } catch (err: any) {
+      console.error('Error uploading edited photo:', err);
+      alert(err.message || 'Ошибка при загрузке отредактированной фотографии');
+    }
   };
 
   return (
@@ -42,7 +66,10 @@ export default function CameraPage() {
         </div>
 
         {/* Компонент камеры */}
-        <CameraCapture onCaptureComplete={handleCaptureComplete} />
+        <CameraCapture 
+          onCaptureComplete={handleCaptureComplete}
+          onEditComplete={handleEditComplete}
+        />
       </div>
     </div>
   );
