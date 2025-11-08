@@ -33,45 +33,51 @@ export async function uploadPhoto(buffer: Buffer, fileName: string, mimeType: st
   console.log('Cloudinary Key:', hasCloudinaryKey ? 'SET' : 'NOT SET');
   console.log('Cloudinary Secret:', hasCloudinarySecret ? 'SET' : 'NOT SET');
   
-  // Приоритет: Netlify Blobs (если доступен) > локальное хранилище > Supabase > Cloudinary
-  if (isNetlifyConfigured()) {
-    console.log('Attempting Netlify Blobs upload (локальное хранилище на сайте)...');
-    try {
-      const result = await uploadToNetlify(buffer, fileName, mimeType);
-      console.log('Netlify Blobs upload successful:', result.url);
-      return result;
-    } catch (error: any) {
-      console.error('Netlify Blobs upload failed:', error);
-      console.error('Error details:', error.message);
-      // Пробуем локальное хранилище
+  // В production на Netlify используем Netlify Blobs (локальное хранилище на сайте Netlify)
+  // В development используем локальную файловую систему
+  if (process.env.NODE_ENV === 'production' || process.env.NETLIFY || process.env.NETLIFY_DEV) {
+    // На Netlify используем Netlify Blobs
+    if (isNetlifyConfigured()) {
+      console.log('Attempting Netlify Blobs upload (локальное хранилище на сайте Netlify)...');
+      try {
+        const result = await uploadToNetlify(buffer, fileName, mimeType);
+        console.log('Netlify Blobs upload successful:', result.url);
+        return result;
+      } catch (error: any) {
+        console.error('Netlify Blobs upload failed:', error);
+        console.error('Error details:', error.message);
+        // Пробуем резервные варианты
+      }
     }
   }
   
-  // Локальное хранилище (работает в development и как fallback)
-  console.log('Using local file storage (локальное хранилище на сайте)...');
-  try {
-    const { writeFile } = await import('fs/promises');
-    const { join } = await import('path');
-    const fs = await import('fs');
-    
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
+  // В development используем локальное хранилище
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Using local file storage (development)...');
+    try {
+      const { writeFile } = await import('fs/promises');
+      const { join } = await import('path');
+      const fs = await import('fs');
+      
+      const uploadsDir = join(process.cwd(), 'public', 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      const filePath = join(uploadsDir, `${timestamp}-${fileName}`);
+      await writeFile(filePath, buffer);
+      
+      console.log('File saved locally:', filePath);
+      
+      return {
+        url: `/uploads/${timestamp}-${fileName}`,
+        id: `local-${timestamp}`,
+        provider: 'local',
+      };
+    } catch (error: any) {
+      console.error('Local storage failed:', error);
+      // Пробуем резервные варианты
     }
-    
-    const filePath = join(uploadsDir, `${timestamp}-${fileName}`);
-    await writeFile(filePath, buffer);
-    
-    console.log('File saved locally:', filePath);
-    
-    return {
-      url: `/uploads/${timestamp}-${fileName}`,
-      id: `local-${timestamp}`,
-      provider: 'local',
-    };
-  } catch (error: any) {
-    console.error('Local storage failed:', error);
-    // Пробуем следующий вариант (Supabase/Cloudinary)
   }
 
   if (isSupabaseConfigured()) {
