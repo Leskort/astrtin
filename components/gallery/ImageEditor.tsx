@@ -536,31 +536,51 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
           />
         </div>
 
-        {/* Ввод текста */}
+        {/* Ввод текста - адаптирован для мобильных */}
         {textPosition && (
           <div
-            className="absolute p-4 bg-[var(--matrix-black)] border-2 border-[var(--matrix-green-bright)]"
-            style={{ left: textPosition.x + 20, top: textPosition.y + 20 }}
+            className="fixed md:absolute p-3 md:p-2 bg-[var(--matrix-black)] border-2 border-[var(--matrix-green-bright)] z-50"
+            style={{ 
+              left: typeof window !== 'undefined' && window.innerWidth < 768 ? '50%' : `${textPosition.x + 20}px`,
+              top: typeof window !== 'undefined' && window.innerWidth < 768 ? '50%' : `${textPosition.y + 20}px`,
+              transform: typeof window !== 'undefined' && window.innerWidth < 768 ? 'translate(-50%, -50%)' : 'none',
+              maxWidth: typeof window !== 'undefined' && window.innerWidth < 768 ? '90%' : 'auto',
+            }}
           >
             <input
               type="text"
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleTextSubmit();
-                } else if (e.key === 'Escape') {
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleTextSubmit();
+                if (e.key === 'Escape') {
                   setTextPosition(null);
                   setTextInput('');
                 }
               }}
+              className="bg-[var(--matrix-gray-dark)] border border-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)] font-mono text-base md:text-sm px-3 md:px-2 py-2 md:py-1 outline-none focus:border-[var(--matrix-green-bright)] w-full md:w-40 mb-2 md:mb-0"
               placeholder="Введите текст..."
-              className="bg-[var(--matrix-gray-dark)] border border-[var(--matrix-green-dark)] text-[var(--matrix-green-bright)] font-mono px-2 py-1 outline-none focus:border-[var(--matrix-green-bright)]"
               autoFocus
             />
             <div className="flex gap-2 mt-2">
-              <Button onClick={handleTextSubmit} size="sm">ДОБАВИТЬ</Button>
-              <Button onClick={() => { setTextPosition(null); setTextInput(''); }} size="sm" variant="secondary">ОТМЕНА</Button>
+              <Button 
+                onClick={handleTextSubmit} 
+                size="md" 
+                className="flex-1 md:flex-none min-h-[44px] touch-manipulation"
+              >
+                ДОБАВИТЬ
+              </Button>
+              <Button 
+                onClick={() => { 
+                  setTextPosition(null); 
+                  setTextInput(''); 
+                }} 
+                size="md" 
+                variant="danger"
+                className="flex-1 md:flex-none min-h-[44px] touch-manipulation"
+              >
+                ОТМЕНА
+              </Button>
             </div>
           </div>
         )}
@@ -572,20 +592,22 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
           </p>
         )}
 
-        {/* Кнопки действий */}
-        <div className="flex gap-4 mt-4">
-          <Button
-            onClick={handleSave}
-            size="lg"
+        {/* Кнопки сохранения/отмены - увеличенные для мобильных */}
+        <div className="mt-2 md:mt-4 flex gap-2 md:gap-4 justify-center w-full flex-wrap">
+          <Button 
+            onClick={handleSave} 
+            size="lg" 
             disabled={saving}
+            className="min-h-[48px] min-w-[140px] touch-manipulation flex-1 md:flex-none"
           >
-            {saving ? 'СОХРАНЕНИЕ...' : 'СОХРАНИТЬ'}
+            {saving ? <Loading text="СОХРАНЕНИЕ..." /> : 'СОХРАНИТЬ'}
           </Button>
-          <Button
-            onClick={onCancel}
-            size="lg"
-            variant="danger"
+          <Button 
+            onClick={onCancel} 
+            size="lg" 
+            variant="danger" 
             disabled={saving}
+            className="min-h-[48px] min-w-[140px] touch-manipulation flex-1 md:flex-none"
           >
             ОТМЕНА
           </Button>

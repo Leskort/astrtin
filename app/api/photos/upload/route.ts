@@ -8,10 +8,10 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get('auth_session');
     
-    // Проверяем сессию
     if (!sessionToken?.value) {
       console.error('Upload rejected - no session token');
-      console.log('Available cookies:', cookieStore.getAll().map(c => c.name));
+      const allCookies = cookieStore.getAll();
+      console.log('Available cookies:', allCookies.map(c => c.name));
       return NextResponse.json(
         { 
           error: 'Не авторизован. Пожалуйста, войдите в систему.',
