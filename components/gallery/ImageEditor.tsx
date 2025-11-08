@@ -36,6 +36,7 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
   const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [history, setHistory] = useState<Drawing[][]>([]);
+  const [redoHistory, setRedoHistory] = useState<Drawing[][]>([]);
   const [textInput, setTextInput] = useState('');
   const [textPosition, setTextPosition] = useState<{ x: number; y: number } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -166,28 +167,34 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
     }
   }, [drawings, currentPath, isDrawing, tool, color, lineWidth]);
 
-  // Получение координат мыши относительно canvas
+  // Получение координат мыши относительно canvas с учетом масштаба
   const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
     };
   };
 
-  // Получение координат touch относительно canvas
+  // Получение координат touch относительно canvas с учетом масштаба
   const getTouchPos = (e: React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches[0] || e.changedTouches[0];
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
     return {
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top,
+      x: (touch.clientX - rect.left) * scaleX,
+      y: (touch.clientY - rect.top) * scaleY,
     };
   };
 
@@ -223,8 +230,18 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
       ctx.lineCap = 'round';
       drawArrow(ctx, startPos.x, startPos.y, pos.x, pos.y);
     } else if (tool === 'marker') {
-      // Добавляем точку в текущий путь (отрисовка произойдет в useEffect)
-      setCurrentPath([...currentPath, pos]);
+      // Добавляем точку в текущий путь только если она достаточно далеко от предыдущей
+      if (currentPath.length === 0) {
+        setCurrentPath([pos]);
+      } else {
+        const lastPoint = currentPath[currentPath.length - 1];
+        const distance = Math.sqrt(Math.pow(pos.x - lastPoint.x, 2) + Math.pow(pos.y - lastPoint.y, 2));
+        
+        // Добавляем точку только если она на расстоянии больше 1 пикселя
+        if (distance > 1) {
+          setCurrentPath([...currentPath, pos]);
+        }
+      }
     }
   };
 
@@ -247,18 +264,24 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
       };
       setDrawings([...drawings, newDrawing]);
       setHistory([...history, drawings]);
+      setRedoHistory([]); // Очищаем redo при новом действии
     } else if (tool === 'marker' && currentPath.length > 0) {
-      // Сохраняем путь маркера
-      const newDrawing: Drawing = {
-        type: 'marker',
-        x1: currentPath[0].x,
-        y1: currentPath[0].y,
-        points: [...currentPath],
-        color,
-        lineWidth,
-      };
-      setDrawings([...drawings, newDrawing]);
-      setHistory([...history, drawings]);
+      // Упрощаем путь маркера - убираем слишком близкие точки для плавности
+      const simplifiedPath = simplifyPath(currentPath, 2);
+      
+      if (simplifiedPath.length > 1) {
+        const newDrawing: Drawing = {
+          type: 'marker',
+          x1: simplifiedPath[0].x,
+          y1: simplifiedPath[0].y,
+          points: simplifiedPath,
+          color,
+          lineWidth,
+        };
+        setDrawings([...drawings, newDrawing]);
+        setHistory([...history, drawings]);
+        setRedoHistory([]); // Очищаем redo при новом действии
+      }
       setCurrentPath([]);
     }
 
@@ -301,11 +324,44 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
     handleEnd(pos);
   };
 
+  // Упрощение пути для плавности
+  const simplifyPath = (points: { x: number; y: number }[], tolerance: number): { x: number; y: number }[] => {
+    if (points.length <= 2) return points;
+    
+    const simplified: { x: number; y: number }[] = [points[0]];
+    
+    for (let i = 1; i < points.length - 1; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const next = points[i + 1];
+      
+      const dist1 = Math.sqrt(Math.pow(curr.x - prev.x, 2) + Math.pow(curr.y - prev.y, 2));
+      const dist2 = Math.sqrt(Math.pow(next.x - curr.x, 2) + Math.pow(next.y - curr.y, 2));
+      
+      // Добавляем точку только если она достаточно далеко от предыдущей
+      if (dist1 > tolerance || dist2 > tolerance) {
+        simplified.push(curr);
+      }
+    }
+    
+    simplified.push(points[points.length - 1]);
+    return simplified;
+  };
+
   const handleUndo = () => {
     if (history.length === 0) return;
     const previousState = history[history.length - 1];
+    setRedoHistory([...redoHistory, drawings]); // Сохраняем текущее состояние в redo
     setHistory(history.slice(0, -1));
     setDrawings(previousState);
+  };
+
+  const handleRedo = () => {
+    if (redoHistory.length === 0) return;
+    const nextState = redoHistory[redoHistory.length - 1];
+    setHistory([...history, drawings]); // Сохраняем текущее состояние в undo
+    setRedoHistory(redoHistory.slice(0, -1));
+    setDrawings(nextState);
   };
 
   const handleSave = async () => {
@@ -345,6 +401,7 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
     };
     setDrawings([...drawings, newDrawing]);
     setHistory([...history, drawings]);
+    setRedoHistory([]); // Очищаем redo при новом действии
     setTextInput('');
     setTextPosition(null);
   };
@@ -418,18 +475,33 @@ export default function ImageEditor({ photo, onSave, onCancel }: ImageEditorProp
               <span className="text-[var(--matrix-green-dark)] font-mono text-xs w-8">{lineWidth}</span>
             </div>
 
-            {/* Отмена */}
-            <button
-              onClick={handleUndo}
-              disabled={history.length === 0}
-              className={`px-2 md:px-4 py-2 border-2 font-mono text-xs md:text-sm transition-all min-h-[44px] ${
-                history.length === 0
-                  ? 'border-[var(--matrix-gray-dark)] text-[var(--matrix-gray-dark)] cursor-not-allowed'
-                  : 'border-[var(--matrix-yellow-neon)] text-[var(--matrix-yellow-neon)] hover:bg-[var(--matrix-yellow-neon)] hover:text-[var(--matrix-black)] active:bg-[var(--matrix-yellow-neon)] active:text-[var(--matrix-black)]'
-              }`}
-            >
-              ↶ ОТМЕНА
-            </button>
+            {/* История */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleUndo}
+                disabled={history.length === 0}
+                className={`px-2 md:px-4 py-2 border-2 font-mono text-xs md:text-sm transition-all min-h-[44px] ${
+                  history.length === 0
+                    ? 'border-[var(--matrix-gray-dark)] text-[var(--matrix-gray-dark)] cursor-not-allowed'
+                    : 'border-[var(--matrix-yellow-neon)] text-[var(--matrix-yellow-neon)] hover:bg-[var(--matrix-yellow-neon)] hover:text-[var(--matrix-black)] active:bg-[var(--matrix-yellow-neon)] active:text-[var(--matrix-black)]'
+                }`}
+                title="Назад (Undo)"
+              >
+                ↶ НАЗАД
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={redoHistory.length === 0}
+                className={`px-2 md:px-4 py-2 border-2 font-mono text-xs md:text-sm transition-all min-h-[44px] ${
+                  redoHistory.length === 0
+                    ? 'border-[var(--matrix-gray-dark)] text-[var(--matrix-gray-dark)] cursor-not-allowed'
+                    : 'border-[var(--matrix-cyan-neon)] text-[var(--matrix-cyan-neon)] hover:bg-[var(--matrix-cyan-neon)] hover:text-[var(--matrix-black)] active:bg-[var(--matrix-cyan-neon)] active:text-[var(--matrix-black)]'
+                }`}
+                title="Вперед (Redo)"
+              >
+                ↷ ВПЕРЕД
+              </button>
+            </div>
           </div>
         </div>
 
