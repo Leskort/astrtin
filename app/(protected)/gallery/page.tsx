@@ -23,7 +23,9 @@ export default function GalleryPage() {
   const loadPhotos = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/photos');
+      const response = await fetch('/api/photos', {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         throw new Error('Не удалось загрузить фотографии');
@@ -47,6 +49,7 @@ export default function GalleryPage() {
     try {
       const response = await fetch(`/api/photos/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -68,7 +71,9 @@ export default function GalleryPage() {
 
   const handleDownload = async (photo: Photo) => {
     try {
-      const response = await fetch(`/api/photos/${photo.id}/download`);
+      const response = await fetch(`/api/photos/${photo.id}/download`, {
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error('Не удалось скачать');
       
       const blob = await response.blob();
@@ -94,6 +99,7 @@ export default function GalleryPage() {
 
       const response = await fetch(`/api/photos/${photo.id}/edit`, {
         method: 'PUT',
+        credentials: 'include',
         body: formData,
       });
 
@@ -113,7 +119,10 @@ export default function GalleryPage() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include',
+      });
       router.push('/');
     } catch (err) {
       router.push('/');

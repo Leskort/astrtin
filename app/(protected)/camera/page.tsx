@@ -22,6 +22,7 @@ export default function CameraPage() {
 
       const response = await fetch('/api/photos/upload', {
         method: 'POST',
+        credentials: 'include',
         body: formData,
       });
 

@@ -52,6 +52,7 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
 
       const response = await fetch('/api/photos/upload', {
         method: 'POST',
+        credentials: 'include', // Важно: отправляем cookie с запросом
         body: formData,
       });
 

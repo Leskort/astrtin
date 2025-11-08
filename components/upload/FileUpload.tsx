@@ -85,6 +85,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
         const response = await fetch('/api/photos/upload', {
           method: 'POST',
+          credentials: 'include', // Важно: отправляем cookie с запросом
           body: formData,
         });
 

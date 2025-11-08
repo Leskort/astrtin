@@ -21,6 +21,7 @@ export default function LoginForm() {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'include', // Важно: принимаем cookie от сервера
         headers: {
           'Content-Type': 'application/json',
         },

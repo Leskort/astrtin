@@ -8,9 +8,18 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get('auth_session');
     
+    // Логируем для отладки
+    const allCookies = cookieStore.getAll();
+    console.log('Upload request - Cookies:', {
+      hasAuthSession: !!sessionToken?.value,
+      sessionValue: sessionToken?.value ? 'present' : 'missing',
+      allCookies: allCookies.map(c => c.name),
+    });
+    
     if (!sessionToken?.value) {
+      console.error('Unauthorized upload attempt - no session token');
       return NextResponse.json(
-        { error: 'Не авторизован' },
+        { error: 'Не авторизован. Пожалуйста, войдите в систему.' },
         { status: 401 }
       );
     }
