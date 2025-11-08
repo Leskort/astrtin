@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { readdir, stat } from 'fs/promises';
+import { join } from 'path';
 
 // Временное хранилище фотографий (в продакшене использовать БД)
 // TODO: Интегрировать с реальным хранилищем
@@ -17,8 +19,55 @@ export async function GET() {
       );
     }
 
-    // TODO: Загрузить фотографии из БД/хранилища
-    // Пока возвращаем пустой массив
+    // В development читаем файлы из папки uploads
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        const uploadsDir = join(process.cwd(), 'public', 'uploads');
+        const files = await readdir(uploadsDir);
+        
+        const photos = await Promise.all(
+          files
+            .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+            .map(async (fileName) => {
+              const filePath = join(uploadsDir, fileName);
+              const stats = await stat(filePath);
+              
+              // Извлекаем timestamp из имени файла
+              const match = fileName.match(/^(\d+)-/);
+              const timestamp = match ? parseInt(match[1]) : Date.now();
+              
+              return {
+                id: `photo-${timestamp}`,
+                userId: sessionToken.value,
+                url: `/uploads/${fileName}`,
+                fileName: fileName.replace(/^\d+-/, ''),
+                size: stats.size,
+                mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'jpeg'}`,
+                uploadedAt: new Date(timestamp).toISOString(),
+              };
+            })
+        );
+
+        // Сортируем по дате загрузки (новые первыми)
+        photos.sort((a, b) => 
+          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+        );
+
+        return NextResponse.json({
+          photos,
+        });
+      } catch (err: any) {
+        // Если папка не существует, возвращаем пустой массив
+        if (err.code === 'ENOENT') {
+          return NextResponse.json({
+            photos: [],
+          });
+        }
+        throw err;
+      }
+    }
+
+    // В production нужно загружать из БД/хранилища
     return NextResponse.json({
       photos: [],
     });

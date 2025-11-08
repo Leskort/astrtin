@@ -27,6 +27,10 @@ yarn-error.log*
 
 # local env files
 .env*.local
+
+# uploads directory (development only)
+/public/uploads/*
+!/public/uploads/.gitkeep
 .env
 
 # env example files with secrets
