@@ -4,6 +4,8 @@ import { uploadPhoto } from '@/lib/storage-simple';
 
 export async function POST(request: Request) {
   try {
+    console.log('=== Upload request received ===');
+    
     // Проверяем сессию
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get('auth_session');
@@ -21,18 +23,28 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log('Session check passed, processing file...');
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
     if (!file) {
+      console.error('No file in form data');
       return NextResponse.json(
         { error: 'Файл не найден' },
         { status: 400 }
       );
     }
 
+    console.log('File received:', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    });
+
     // Проверка типа файла
     if (!file.type.startsWith('image/')) {
+      console.error('Invalid file type:', file.type);
       return NextResponse.json(
         { error: 'Файл должен быть изображением' },
         { status: 400 }
@@ -41,20 +53,23 @@ export async function POST(request: Request) {
 
     // Проверка размера (макс 10MB)
     if (file.size > 10 * 1024 * 1024) {
+      console.error('File too large:', file.size);
       return NextResponse.json(
         { error: 'Файл слишком большой (макс 10MB)' },
         { status: 400 }
       );
     }
 
+    console.log('Converting file to buffer...');
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const timestamp = Date.now();
+    console.log('Buffer created, size:', buffer.length, 'bytes');
 
-    // Используем универсальную функцию загрузки
+    // Используем Netlify Blobs для загрузки
+    console.log('Calling uploadPhoto...');
     const storageResult = await uploadPhoto(buffer, file.name, file.type);
+    console.log('Upload successful:', storageResult);
 
-    // TODO: Сохранить метаданные в БД
     return NextResponse.json({
       success: true,
       photo: {
@@ -69,8 +84,18 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Upload error:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      name: error?.name,
+      stack: error?.stack,
+    });
+    
     return NextResponse.json(
-      { error: error.message || 'Ошибка при загрузке файла' },
+      { 
+        error: error.message || 'Ошибка при загрузке файла',
+        hint: 'Проверьте логи Netlify для детальной информации об ошибке.',
+      },
       { status: 500 }
     );
   }
