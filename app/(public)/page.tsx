@@ -88,12 +88,15 @@ export default function HomePage() {
 
         {/* Отображение распознанного текста (для отладки) */}
         {transcript && isListening && !found && (
-          <div className="mb-4">
+          <div className="mb-4 max-w-sm mx-auto">
             <p className="text-[var(--matrix-green-dark)] font-mono text-xs mb-2 break-words">
-              Распознано: {transcript}
+              Распознано: <span className="text-[var(--matrix-green-soft)]">{transcript}</span>
             </p>
-            <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50">
+            <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50 mb-2">
               Ищем: {process.env.NEXT_PUBLIC_VOICE_CODE || 'tron'}
+            </p>
+            <p className="text-[var(--matrix-cyan-neon)] font-mono text-xs">
+              Произнесите: "tron" или "трон"
             </p>
           </div>
         )}

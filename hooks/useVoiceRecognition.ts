@@ -208,32 +208,73 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let fullTranscript = '';
       
-      // Собираем все результаты
-      for (let i = 0; i < event.results.length; i++) {
+      // Собираем все результаты (и промежуточные, и финальные)
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result[0]) {
           fullTranscript += result[0].transcript + ' ';
         }
       }
       
+      // Также проверяем все предыдущие результаты
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result[0] && !fullTranscript.includes(result[0].transcript)) {
+          fullTranscript = result[0].transcript + ' ' + fullTranscript;
+        }
+      }
+      
       const currentTranscript = fullTranscript.toLowerCase().trim();
       setTranscript(currentTranscript);
 
-      // Проверяем наличие кодового слова
-      const words = currentTranscript.split(/\s+/);
-      const found = words.some(word => {
-        const cleanWord = word.replace(/[.,!?;:]/g, '');
-        return cleanWord === voiceCode || cleanWord.includes(voiceCode) || voiceCode.includes(cleanWord);
-      }) || currentTranscript.includes(voiceCode);
+      console.log('=== РАСПОЗНАВАНИЕ ===');
+      console.log('Полный текст:', currentTranscript);
+      console.log('Ищем слово:', voiceCode);
+      console.log('Длина текста:', currentTranscript.length);
+
+      // Более гибкая проверка кодового слова
+      // Убираем все знаки препинания и пробелы для сравнения
+      const cleanTranscript = currentTranscript.replace(/[^a-zа-яё0-9]/gi, '').toLowerCase();
+      const cleanCode = voiceCode.replace(/[^a-zа-яё0-9]/gi, '').toLowerCase();
+      
+      console.log('Очищенный текст:', cleanTranscript);
+      console.log('Очищенный код:', cleanCode);
+      
+      // Проверяем разными способами:
+      // 1. Точное совпадение
+      // 2. Содержит код
+      // 3. Код содержит распознанное слово (для коротких слов)
+      // 4. Похожесть звучания (для английских слов на русском языке)
+      const exactMatch = cleanTranscript === cleanCode;
+      const containsCode = cleanTranscript.includes(cleanCode);
+      const codeContainsTranscript = cleanCode.includes(cleanTranscript) && cleanTranscript.length >= 2;
+      
+      // Дополнительные варианты для "tron"
+      const alternativeMatches = [
+        'трон', 'тронн', 'троннн', 'тронннн', // русское произношение
+        'tron', 'tronn', 'tronnn', // английское
+        'тро', 'тронн', // сокращения
+      ];
+      const hasAlternative = alternativeMatches.some(alt => 
+        cleanTranscript.includes(alt) || alt.includes(cleanTranscript)
+      );
+      
+      const found = exactMatch || containsCode || codeContainsTranscript || hasAlternative;
+      
+      console.log('Точное совпадение:', exactMatch);
+      console.log('Содержит код:', containsCode);
+      console.log('Альтернативные варианты:', hasAlternative);
+      console.log('НАЙДЕНО:', found);
       
       if (found) {
+        console.log('✅ КОДОВОЕ СЛОВО НАЙДЕНО! Переход...');
         hasSuccessRef.current = true;
         recognition.stop();
         setIsListening(false);
         setError(null);
         setTimeout(() => {
           onSuccess?.();
-        }, 100);
+        }, 200);
       }
     };
 
