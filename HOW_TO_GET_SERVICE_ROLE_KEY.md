@@ -14,7 +14,7 @@
 ### Шаг 1: Откройте настройки проекта
 1. Зайдите на https://supabase.com
 2. Войдите в свой аккаунт
-3. Выберите ваш проект (wgjlkptioiipijbsxvvu)
+3. Выберите ваш проект
 
 ### Шаг 2: Перейдите в API настройки
 1. В левом меню найдите **"Settings"** (иконка шестеренки ⚙️)
@@ -40,7 +40,7 @@
 
 После получения service_role ключа добавьте в Netlify:
 
-1. **NEXT_PUBLIC_SUPABASE_URL** = `https://wgjlkptioiipijbsxvvu.supabase.co`
+1. **NEXT_PUBLIC_SUPABASE_URL** = `https://ваш-проект-id.supabase.co` (ваш Project URL)
 2. **SUPABASE_SERVICE_ROLE_KEY** = ваш service_role ключ (НЕ anon!)
 
 ## Альтернатива: Использование anon ключа (не рекомендуется)

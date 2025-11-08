@@ -33,6 +33,10 @@ yarn-error.log*
 !/public/uploads/.gitkeep
 .env
 
+# Documentation files with examples (may contain example URLs)
+NETLIFY_VARIABLES.txt
+*_VARIABLES.txt
+
 # env example files with secrets
 *ENV*.txt
 *env*.txt
