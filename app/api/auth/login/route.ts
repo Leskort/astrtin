@@ -49,26 +49,33 @@ export async function POST(request: Request) {
     const sessionValue = email.toLowerCase();
     
     // Устанавливаем cookie на 30 дней
-    // На Netlify всегда используем secure: false для HTTP или secure: true для HTTPS
-    // Next.js автоматически определяет протокол
+    // На Netlify всегда HTTPS, поэтому secure должен быть true
+    // В development используем false для локального тестирования
     const isProduction = process.env.NODE_ENV === 'production';
     const isNetlify = !!process.env.NETLIFY;
+    const useSecure = isProduction || isNetlify;
     
-    // На Netlify всегда HTTPS, поэтому secure должен быть true
-    // В development можно использовать false
     cookieStore.set('auth_session', sessionValue, {
       httpOnly: true,
-      secure: isProduction || isNetlify, // В production всегда secure
-      sameSite: 'lax',
+      secure: useSecure,
+      sameSite: 'lax', // lax позволяет отправлять cookie с GET запросами из других сайтов и POST запросами
       maxAge: 60 * 60 * 24 * 30, // 30 дней
       path: '/',
     });
     
     console.log('Session cookie set:', {
       hasValue: !!sessionValue,
-      secure: isProduction || isNetlify,
+      secure: useSecure,
       environment: process.env.NODE_ENV,
       isNetlify,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Вход выполнен успешно',
+      user: {
+        email: email.toLowerCase(),
+      },
     });
 
     return NextResponse.json({

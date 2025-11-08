@@ -34,15 +34,14 @@ export default function LoginForm() {
         throw new Error(data.error || 'Ошибка входа');
       }
 
-      // Успешный вход
+      // Успешный вход - обновляем страницу, чтобы cookie точно установился
       console.log('Вход успешен, переход в галерею...');
-      router.push('/gallery');
-      // Fallback на случай если router не сработает
-      setTimeout(() => {
-        if (window.location.pathname === '/login') {
-          window.location.href = '/gallery';
-        }
-      }, 500);
+      
+      // Небольшая задержка для установки cookie
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Используем window.location для гарантированного обновления с новым cookie
+      window.location.href = '/gallery';
     } catch (err: any) {
       setError(err.message || 'Неверный email или пароль');
       setLoading(false);
