@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
-import { uploadToCloudinary, isCloudinaryConfigured } from '@/lib/cloudinary';
-import { uploadToSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { uploadPhoto } from '@/lib/storage-simple';
 
 export async function POST(request: Request) {
   try {
@@ -47,73 +44,21 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const timestamp = Date.now();
-    const fileName = `${timestamp}-${file.name}`;
 
-    let fileUrl: string;
-    let photoId: string;
-
-    // Приоритет: Supabase > Cloudinary > файловая система (только development)
-    if (isSupabaseConfigured()) {
-      try {
-        fileUrl = await uploadToSupabase(buffer, file.name, file.type);
-        photoId = `supabase-${timestamp}`;
-      } catch (error: any) {
-        console.error('Supabase upload error:', error);
-        throw new Error(`Ошибка загрузки в Supabase: ${error.message}`);
-      }
-    } else if (isCloudinaryConfigured()) {
-      try {
-        fileUrl = await uploadToCloudinary(buffer, fileName, file.type);
-        photoId = `cloudinary-${timestamp}`;
-      } catch (error: any) {
-        console.error('Cloudinary upload error:', error);
-        // Fallback на файловую систему если Cloudinary не работает
-        if (process.env.NODE_ENV === 'development') {
-          const uploadsDir = join(process.cwd(), 'public', 'uploads');
-          const filePath = join(uploadsDir, fileName);
-          
-          const fs = require('fs');
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-          await writeFile(filePath, buffer);
-          fileUrl = `/uploads/${fileName}`;
-          photoId = `temp-${timestamp}`;
-        } else {
-          throw new Error('Ошибка загрузки в Cloudinary');
-        }
-      }
-    } else {
-      // Используем файловую систему только в development
-      if (process.env.NODE_ENV === 'development') {
-        const uploadsDir = join(process.cwd(), 'public', 'uploads');
-        const filePath = join(uploadsDir, fileName);
-        
-        const fs = require('fs');
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        await writeFile(filePath, buffer);
-        fileUrl = `/uploads/${fileName}`;
-        photoId = `temp-${timestamp}`;
-      } else {
-        return NextResponse.json(
-          { error: 'Настройте Supabase или Cloudinary для загрузки фотографий. Инструкции: SUPABASE_SETUP.md или CLOUDINARY_SETUP.md' },
-          { status: 500 }
-        );
-      }
-    }
+    // Используем универсальную функцию загрузки
+    const storageResult = await uploadPhoto(buffer, file.name, file.type);
 
     // TODO: Сохранить метаданные в БД
     return NextResponse.json({
       success: true,
       photo: {
-        id: photoId,
-        url: fileUrl,
+        id: storageResult.id,
+        url: storageResult.url,
         fileName: file.name,
         size: file.size,
         mimeType: file.type,
         uploadedAt: new Date().toISOString(),
+        provider: storageResult.provider,
       },
     });
   } catch (error: any) {
