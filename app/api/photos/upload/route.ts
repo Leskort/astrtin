@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
-
-// Временное хранилище в файловой системе (в продакшене использовать облачное хранилище)
-// TODO: Интегрировать с Cloudinary/Supabase/Firebase
+import { uploadToCloudinary, isCloudinaryConfigured } from '@/lib/cloudinary';
 
 export async function POST(request: Request) {
   try {
@@ -45,67 +43,75 @@ export async function POST(request: Request) {
       );
     }
 
-    // Временное сохранение в файловой системе
-    // В продакшене загружать в облачное хранилище
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // Создаем уникальное имя файла
     const timestamp = Date.now();
     const fileName = `${timestamp}-${file.name}`;
-    
-    // В development сохраняем локально, в production нужно использовать облачное хранилище
-    if (process.env.NODE_ENV === 'development') {
-      const uploadsDir = join(process.cwd(), 'public', 'uploads');
-      const filePath = join(uploadsDir, fileName);
-      
+
+    let fileUrl: string;
+    let photoId: string;
+
+    // Пробуем загрузить в Cloudinary если настроен
+    if (isCloudinaryConfigured()) {
       try {
-        await writeFile(filePath, buffer);
-      } catch (err) {
-        // Если директория не существует, создаем её
+        fileUrl = await uploadToCloudinary(buffer, fileName, file.type);
+        photoId = `cloudinary-${timestamp}`;
+      } catch (error: any) {
+        console.error('Cloudinary upload error:', error);
+        // Fallback на файловую систему если Cloudinary не работает
+        if (process.env.NODE_ENV === 'development') {
+          const uploadsDir = join(process.cwd(), 'public', 'uploads');
+          const filePath = join(uploadsDir, fileName);
+          
+          const fs = require('fs');
+          if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+          }
+          await writeFile(filePath, buffer);
+          fileUrl = `/uploads/${fileName}`;
+          photoId = `temp-${timestamp}`;
+        } else {
+          throw new Error('Ошибка загрузки в Cloudinary');
+        }
+      }
+    } else {
+      // Используем файловую систему только в development
+      if (process.env.NODE_ENV === 'development') {
+        const uploadsDir = join(process.cwd(), 'public', 'uploads');
+        const filePath = join(uploadsDir, fileName);
+        
         const fs = require('fs');
         if (!fs.existsSync(uploadsDir)) {
           fs.mkdirSync(uploadsDir, { recursive: true });
-          await writeFile(filePath, buffer);
         }
+        await writeFile(filePath, buffer);
+        fileUrl = `/uploads/${fileName}`;
+        photoId = `temp-${timestamp}`;
+      } else {
+        return NextResponse.json(
+          { error: 'Настройте Cloudinary для загрузки фотографий. Добавьте CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET в переменные окружения.' },
+          { status: 500 }
+        );
       }
-
-      // Возвращаем URL для доступа к файлу
-      const fileUrl = `/uploads/${fileName}`;
-
-      // TODO: Сохранить метаданные в БД
-      // const photo = await savePhotoToDB({
-      //   userId: sessionToken.value,
-      //   url: fileUrl,
-      //   fileName: file.name,
-      //   size: file.size,
-      //   mimeType: file.type,
-      // });
-
-      return NextResponse.json({
-        success: true,
-        photo: {
-          id: `temp-${timestamp}`,
-          url: fileUrl,
-          fileName: file.name,
-          size: file.size,
-          mimeType: file.type,
-          uploadedAt: new Date().toISOString(),
-        },
-      });
-    } else {
-      // В production нужно использовать облачное хранилище
-      return NextResponse.json(
-        { error: 'Загрузка в облачное хранилище не настроена. Настройте Cloudinary/Supabase/Firebase.' },
-        { status: 501 }
-      );
     }
+
+    // TODO: Сохранить метаданные в БД
+    return NextResponse.json({
+      success: true,
+      photo: {
+        id: photoId,
+        url: fileUrl,
+        fileName: file.name,
+        size: file.size,
+        mimeType: file.type,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
   } catch (error: any) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { error: 'Ошибка при загрузке файла' },
+      { error: error.message || 'Ошибка при загрузке файла' },
       { status: 500 }
     );
   }
 }
-

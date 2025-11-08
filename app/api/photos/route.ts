@@ -20,6 +20,10 @@ export async function GET() {
     }
 
     // В development читаем файлы из папки uploads
+    // В production фотографии будут храниться в Cloudinary (метаданные в БД)
+    // Пока возвращаем пустой массив - фотографии будут загружаться, но список нужно будет получать из БД
+    // Для простоты пока используем файловую систему в development
+    
     if (process.env.NODE_ENV === 'development') {
       try {
         const uploadsDir = join(process.cwd(), 'public', 'uploads');
@@ -67,7 +71,8 @@ export async function GET() {
       }
     }
 
-    // В production нужно загружать из БД/хранилища
+    // В production возвращаем пустой массив
+    // TODO: Загружать из БД когда будет настроена база данных
     return NextResponse.json({
       photos: [],
     });
