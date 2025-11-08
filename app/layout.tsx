@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Matrix Photo Vault",
-  description: "Secure photo storage with Matrix-style interface",
+  title: "astrinn",
+  description: "Secure photo storage",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   themeColor: "#000000",
 };
