@@ -77,14 +77,6 @@ export async function POST(request: Request) {
         email: email.toLowerCase(),
       },
     });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Вход выполнен успешно',
-      user: {
-        email: email.toLowerCase(),
-      },
-    });
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json(
