@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { uploadToCloudinary, isCloudinaryConfigured } from '@/lib/cloudinary';
+import { uploadToSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
@@ -51,8 +52,16 @@ export async function POST(request: Request) {
     let fileUrl: string;
     let photoId: string;
 
-    // Пробуем загрузить в Cloudinary если настроен
-    if (isCloudinaryConfigured()) {
+    // Приоритет: Supabase > Cloudinary > файловая система (только development)
+    if (isSupabaseConfigured()) {
+      try {
+        fileUrl = await uploadToSupabase(buffer, file.name, file.type);
+        photoId = `supabase-${timestamp}`;
+      } catch (error: any) {
+        console.error('Supabase upload error:', error);
+        throw new Error(`Ошибка загрузки в Supabase: ${error.message}`);
+      }
+    } else if (isCloudinaryConfigured()) {
       try {
         fileUrl = await uploadToCloudinary(buffer, fileName, file.type);
         photoId = `cloudinary-${timestamp}`;
@@ -89,7 +98,7 @@ export async function POST(request: Request) {
         photoId = `temp-${timestamp}`;
       } else {
         return NextResponse.json(
-          { error: 'Настройте Cloudinary для загрузки фотографий. Добавьте CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET в переменные окружения.' },
+          { error: 'Настройте Supabase или Cloudinary для загрузки фотографий. Инструкции: SUPABASE_SETUP.md или CLOUDINARY_SETUP.md' },
           { status: 500 }
         );
       }
