@@ -12,28 +12,22 @@ export default function HomePage() {
   const router = useRouter();
 
   const handleSuccess = async () => {
-    console.log('=== handleSuccess ВЫЗВАН ===');
     setFound(true);
     
-    // Сразу переходим на логин (упрощенно для тестирования)
-    console.log('Переход на /login...');
     try {
       router.push('/login');
-      // Дополнительно используем window.location для надежности
       setTimeout(() => {
         if (window.location.pathname === '/') {
-          console.log('Router не сработал, используем window.location');
           window.location.href = '/login';
         }
       }, 500);
     } catch (error) {
-      console.error('Ошибка при переходе:', error);
       window.location.href = '/login';
     }
   };
 
   const handleError = (error: string) => {
-    console.error('Voice recognition error:', error);
+    // Ошибка обрабатывается в компоненте
   };
 
   const { isListening, error, transcript, isSupported, needsManualStart, startListening, stopListening } = useVoiceRecognition({
