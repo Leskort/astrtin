@@ -7,6 +7,7 @@ import PhotoGrid from '@/components/gallery/PhotoGrid';
 import PhotoViewer from '@/components/gallery/PhotoViewer';
 import Loading from '@/components/ui/Loading';
 import Button from '@/components/ui/Button';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -14,11 +15,21 @@ export default function GalleryPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  // Проверка авторизации
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
 
   // Загрузка фотографий
   useEffect(() => {
-    loadPhotos();
-  }, []);
+    if (user) {
+      loadPhotos();
+    }
+  }, [user]);
 
   const loadPhotos = async () => {
     try {
@@ -129,12 +140,16 @@ export default function GalleryPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--matrix-black)]">
-        <Loading text="ЗАГРУЗКА ГАЛЕРЕИ..." />
+        <Loading text={authLoading ? "ПРОВЕРКА ДОСТУПА..." : "ЗАГРУЗКА ГАЛЕРЕИ..."} />
       </div>
     );
+  }
+
+  if (!user) {
+    return null; // Редирект на логин
   }
 
   return (

@@ -1,11 +1,34 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import FileUpload from '@/components/upload/FileUpload';
 import Button from '@/components/ui/Button';
+import Loading from '@/components/ui/Loading';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function UploadPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  // Проверка авторизации
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--matrix-black)]">
+        <Loading text="ПРОВЕРКА ДОСТУПА..." />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Редирект на логин
+  }
 
   const handleUploadComplete = () => {
     // Переход в галерею после успешной загрузки
