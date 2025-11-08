@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Matrix Photo Vault
 
-## Getting Started
+Безопасное приложение для хранения фотографий с интерфейсом в стиле Матрицы.
 
-First, run the development server:
+## 🚀 Особенности
 
+- 🔐 Голосовая аутентификация на начальной странице
+- 🔒 Безопасный вход (только один пользователь)
+- 📸 Загрузка фотографий в облачное хранилище
+- 📷 Съемка через камеру устройства
+- 🖼️ Галерея фотографий с просмотром
+- 💾 Все фотографии хранятся только в облаке (не на устройстве)
+- 🎨 Дизайн в стиле Матрицы с неоновыми эффектами
+
+## 🛠️ Технологии
+
+- **Next.js 14+** (App Router)
+- **TypeScript**
+- **Tailwind CSS** (с кастомными цветами Матрицы)
+- **NextAuth.js** (аутентификация)
+- **react-speech-recognition** (голосовое распознавание)
+- **Framer Motion** (анимации)
+
+## 📋 Требования
+
+- Node.js 18+
+- npm или yarn
+- Аккаунт у провайдера хранилища (Cloudinary/Supabase/Firebase)
+- База данных (Supabase/Firebase/Vercel Postgres)
+
+## 🔧 Установка
+
+1. Клонируйте репозиторий:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <your-repo-url>
+cd photo-matrix-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Установите зависимости:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Создайте файл `.env.local`:
+```bash
+cp .env.local.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Заполните переменные окружения в `.env.local`:
+- `NEXTAUTH_SECRET` - сгенерируйте с помощью: `openssl rand -base64 32`
+- `NEXTAUTH_URL` - URL вашего приложения
+- `VOICE_CODE` - кодовое слово для голосовой аутентификации (по умолчанию "tron")
+- Настройте провайдера хранилища и базу данных
 
-## Learn More
+5. Запустите dev сервер:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+6. Откройте [http://localhost:3000](http://localhost:3000) в браузере
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📁 Структура проекта
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+/app
+  /(public)          # Публичные страницы
+    page.tsx         # Начальная страница с голосовой аутентификацией
+  /(auth)            # Страницы аутентификации
+    /login           # Страница логина
+  /(protected)       # Защищенные страницы
+    /gallery         # Галерея фотографий
+    /camera          # Съемка через камеру
+    /upload          # Загрузка фотографий
+  /api               # API роуты
+/components          # React компоненты
+  /ui                # Базовые UI компоненты
+  /voice             # Голосовая аутентификация
+  /camera            # Компоненты камеры
+  /gallery           # Компоненты галереи
+/lib                 # Утилиты и хелперы
+/hooks               # Custom React hooks
+/types               # TypeScript типы
+```
 
-## Deploy on Vercel
+## 🎨 Дизайн
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Приложение использует дизайн в стиле Матрицы:
+- Черный фон (#000000)
+- Неоновый зеленый текст (#00FF41)
+- Эффекты свечения (glow)
+- Моноширинные шрифты
+- Анимации в стиле терминала
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔐 Безопасность
+
+- Все фотографии хранятся только в облачном хранилище
+- Фотографии НЕ сохраняются на устройстве пользователя
+- Безопасная аутентификация через NextAuth.js
+- Защита маршрутов через middleware
+- Валидация всех входных данных
+
+## 📝 TODO
+
+- [x] Базовая настройка проекта
+- [x] Стили в стиле Матрицы
+- [x] Базовые UI компоненты
+- [ ] Голосовая аутентификация
+- [ ] Система логина
+- [ ] Интеграция хранилища
+- [ ] Загрузка фотографий
+- [ ] Галерея фотографий
+- [ ] Съемка через камеру
+- [ ] Деплой на Netlify
+
+## 📄 Лицензия
+
+MIT
+
+## 👤 Автор
+
+Создано с использованием Next.js и дизайна в стиле Матрицы.
