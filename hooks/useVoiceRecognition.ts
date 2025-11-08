@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { isIOS, isSafari } from '@/lib/device';
 
 // Типы для Web Speech API
 interface SpeechRecognition extends EventTarget {
@@ -63,16 +64,16 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<string>('');
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
+  const [needsManualStart, setNeedsManualStart] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasSuccessRef = useRef(false);
+  const retryCountRef = useRef(0);
   
   // Получаем кодовое слово из переменных окружения
   const getVoiceCode = useCallback(() => {
     if (typeof window !== 'undefined') {
-      // Пробуем получить из переменных окружения или используем значение по умолчанию
       const code = process.env.NEXT_PUBLIC_VOICE_CODE || 'tron';
-      console.log('Кодовое слово из env:', code);
       return code.toLowerCase().trim();
     }
     return 'tron';
@@ -87,16 +88,19 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
 
   const voiceCode = getVoiceCode();
   const language = getLanguage();
-  
-  // Логируем для отладки
-  useEffect(() => {
-    console.log('Настройки распознавания:', { voiceCode, language });
-  }, [voiceCode, language]);
 
   // Проверка поддержки браузера
   const checkBrowserSupport = useCallback(() => {
     if (typeof window === 'undefined') return false;
-    return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    const hasSupport = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    
+    // На iOS Safari Web Speech API может работать, но с ограничениями
+    if (isIOS() && isSafari()) {
+      // Проверяем реальную поддержку
+      return hasSupport;
+    }
+    
+    return hasSupport;
   }, []);
 
   // Проверка разрешения микрофона
@@ -109,7 +113,7 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         return false;
       }
-      return null; // Неизвестная ошибка
+      return null;
     }
   }, []);
 
@@ -121,6 +125,15 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
     const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognitionClass) {
+      // На iOS Safari может не поддерживаться
+      if (isIOS()) {
+        const errorMsg = 'На iPhone используйте Chrome или Edge для лучшей поддержки голосового распознавания';
+        setError(errorMsg);
+        setIsSupported(false);
+        setNeedsManualStart(true);
+        onError?.(errorMsg);
+        return;
+      }
       const errorMsg = 'Ваш браузер не поддерживает распознавание речи. Используйте Chrome или Edge.';
       setError(errorMsg);
       setIsSupported(false);
@@ -133,8 +146,18 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
     // Проверяем разрешение микрофона
     const hasPermission = await checkMicrophonePermission();
     if (hasPermission === false) {
-      const errorMsg = 'Разрешите доступ к микрофону в настройках браузера';
+      // На iOS автоматически запрашиваем разрешение при первом вызове
+      if (isIOS() && retryCountRef.current === 0) {
+        retryCountRef.current = 1;
+        // Пробуем еще раз через небольшую задержку
+        setTimeout(() => {
+          startListening();
+        }, 500);
+        return;
+      }
+      const errorMsg = 'Разрешите доступ к микрофону. Нажмите на иконку микрофона в адресной строке.';
       setError(errorMsg);
+      setNeedsManualStart(true);
       onError?.(errorMsg);
       return;
     }
@@ -157,22 +180,25 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
     // Создаем новый экземпляр распознавания
     const recognition = new SpeechRecognitionClass();
     recognition.continuous = true;
-    recognition.interimResults = true; // Включаем промежуточные результаты для лучшей работы
+    recognition.interimResults = true;
     recognition.lang = language;
 
     recognition.onstart = () => {
       setIsListening(true);
       setError(null);
       setTranscript('');
+      setNeedsManualStart(false);
+      retryCountRef.current = 0;
     };
 
     recognition.onend = () => {
       setIsListening(false);
       
       // Автоматически перезапускаем через небольшую задержку, если не было успеха
-      if (!hasSuccessRef.current && !error) {
+      if (!hasSuccessRef.current && !error && retryCountRef.current < 3) {
         restartTimeoutRef.current = setTimeout(() => {
           if (!hasSuccessRef.current) {
+            retryCountRef.current++;
             startListening();
           }
         }, 500);
@@ -193,23 +219,18 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
       const currentTranscript = fullTranscript.toLowerCase().trim();
       setTranscript(currentTranscript);
 
-      // Логируем для отладки
-      console.log('Распознано:', currentTranscript);
-      console.log('Ищем слово:', voiceCode);
-      console.log('Содержит?', currentTranscript.includes(voiceCode));
-
-      // Проверяем наличие кодового слова в текущем транскрипте
-      // Проверяем как полное слово, так и часть текста
+      // Проверяем наличие кодового слова
       const words = currentTranscript.split(/\s+/);
-      const found = words.some(word => word.includes(voiceCode)) || currentTranscript.includes(voiceCode);
+      const found = words.some(word => {
+        const cleanWord = word.replace(/[.,!?;:]/g, '');
+        return cleanWord === voiceCode || cleanWord.includes(voiceCode) || voiceCode.includes(cleanWord);
+      }) || currentTranscript.includes(voiceCode);
       
       if (found) {
-        console.log('Кодовое слово найдено! Переход...');
         hasSuccessRef.current = true;
         recognition.stop();
         setIsListening(false);
         setError(null);
-        // Небольшая задержка перед переходом для надежности
         setTimeout(() => {
           onSuccess?.();
         }, 100);
@@ -223,25 +244,41 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
       switch (event.error) {
         case 'not-allowed':
         case 'permission-denied':
-          errorMsg = 'Доступ к микрофону запрещен. Разрешите доступ в настройках браузера.';
+          if (isIOS()) {
+            errorMsg = 'Разрешите доступ к микрофону в настройках Safari';
+            setNeedsManualStart(true);
+          } else {
+            errorMsg = 'Разрешите доступ к микрофону в настройках браузера';
+            setNeedsManualStart(true);
+          }
           break;
         case 'no-speech':
-          // Не показываем ошибку для no-speech, просто продолжаем
+          // Не показываем ошибку для no-speech
           return;
         case 'network':
           errorMsg = 'Ошибка сети. Проверьте подключение к интернету.';
           break;
         case 'aborted':
-          // Игнорируем aborted
           return;
         case 'audio-capture':
-          errorMsg = 'Не удалось получить доступ к микрофону. Проверьте настройки устройства.';
+          errorMsg = 'Не удалось получить доступ к микрофону.';
           break;
         case 'service-not-allowed':
-          errorMsg = 'Служба распознавания речи недоступна.';
+          if (isIOS()) {
+            errorMsg = 'На iPhone используйте Chrome для голосового распознавания';
+            setNeedsManualStart(true);
+          } else {
+            errorMsg = 'Служба распознавания речи недоступна.';
+          }
           break;
         default:
-          errorMsg = `Ошибка распознавания: ${event.error}`;
+          // Для других ошибок не показываем сообщение, просто перезапускаем
+          if (retryCountRef.current < 2) {
+            setTimeout(() => {
+              startListening();
+            }, 1000);
+            return;
+          }
       }
       
       if (errorMsg) {
@@ -256,8 +293,17 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
     try {
       recognition.start();
     } catch (err: any) {
-      const errorMsg = `Не удалось начать распознавание: ${err.message || 'неизвестная ошибка'}`;
+      // На iOS может быть ошибка при первом запуске
+      if (isIOS() && retryCountRef.current === 0) {
+        retryCountRef.current = 1;
+        setTimeout(() => {
+          startListening();
+        }, 500);
+        return;
+      }
+      const errorMsg = `Не удалось начать распознавание. ${isIOS() ? 'Попробуйте использовать Chrome.' : ''}`;
       setError(errorMsg);
+      setNeedsManualStart(true);
       onError?.(errorMsg);
     }
   }, [voiceCode, language, onSuccess, onError, checkMicrophonePermission, error]);
@@ -279,10 +325,22 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
 
   useEffect(() => {
     // Проверяем поддержку при монтировании
-    setIsSupported(checkBrowserSupport());
+    const supported = checkBrowserSupport();
+    setIsSupported(supported);
     
     // Автоматически начинаем слушать
-    startListening();
+    if (supported) {
+      // Небольшая задержка для iOS чтобы браузер успел инициализироваться
+      const delay = isIOS() ? 1000 : 500;
+      setTimeout(() => {
+        startListening();
+      }, delay);
+    } else {
+      if (isIOS()) {
+        setNeedsManualStart(true);
+        setError('На iPhone используйте Chrome для автоматического распознавания');
+      }
+    }
 
     return () => {
       stopListening();
@@ -297,6 +355,7 @@ export function useVoiceRecognition({ onSuccess, onError }: UseVoiceRecognitionO
     error,
     transcript,
     isSupported,
+    needsManualStart,
     startListening,
     stopListening,
   };

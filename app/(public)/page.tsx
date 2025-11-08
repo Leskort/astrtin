@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
+import { isIOS } from '@/lib/device';
 import Button from '@/components/ui/Button';
 
 export default function HomePage() {
@@ -43,7 +44,7 @@ export default function HomePage() {
     console.error('Voice recognition error:', error);
   };
 
-  const { isListening, error, transcript, isSupported, startListening, stopListening } = useVoiceRecognition({
+  const { isListening, error, transcript, isSupported, needsManualStart, startListening, stopListening } = useVoiceRecognition({
     onSuccess: handleSuccess,
     onError: handleError,
   });
@@ -110,36 +111,60 @@ export default function HomePage() {
           </div>
         )}
         
-        {/* Ошибки */}
-        {error && (
+        {/* Ошибки или необходимость ручного запуска */}
+        {(error || needsManualStart) && (
           <div className="mb-6">
-            <p className="text-[var(--matrix-red-neon)] font-mono text-sm mb-4 text-glow-red">
-              {error}
-            </p>
+            {error && (
+              <p className="text-[var(--matrix-red-neon)] font-mono text-sm mb-4 text-glow-red">
+                {error}
+              </p>
+            )}
             
-            {/* Кнопка для повторной попытки */}
-            {error.includes('микрофон') || error.includes('браузер') ? (
+            {/* Кнопка для запуска/повтора */}
+            {needsManualStart && (
+              <Button
+                onClick={() => {
+                  setFound(false);
+                  startListening();
+                }}
+                size="md"
+                className="mt-4"
+              >
+                НАЧАТЬ СЛУШАТЬ
+              </Button>
+            )}
+            
+            {error && !needsManualStart && (
               <Button
                 onClick={() => {
                   window.location.reload();
                 }}
                 size="md"
+                className="mt-4"
               >
                 ПОВТОРИТЬ
-              </Button>
-            ) : (
-              <Button
-                onClick={startListening}
-                size="md"
-              >
-                НАЧАТЬ СЛУШАТЬ
               </Button>
             )}
           </div>
         )}
 
+        {/* Упрощенный режим для iPhone - кнопка для перехода */}
+        {isIOS() && (isSupported === false || needsManualStart) && !isListening && !found && (
+          <div className="mt-6">
+            <p className="text-[var(--matrix-green-soft)] font-mono text-xs mb-4">
+              Нажмите для продолжения
+            </p>
+            <Button
+              onClick={handleSuccess}
+              size="lg"
+            >
+              ПРОДОЛЖИТЬ
+            </Button>
+          </div>
+        )}
+
         {/* Информация о поддержке браузера */}
-        {isSupported === false && (
+        {isSupported === false && !isIOS() && (
           <p className="text-[var(--matrix-yellow-neon)] font-mono text-xs mt-4">
             Используйте Chrome или Edge для лучшей поддержки
           </p>
