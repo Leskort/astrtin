@@ -1,0 +1,75 @@
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import bcrypt from 'bcryptjs';
+
+// Временное хранилище пользователя (в продакшене использовать БД)
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@astrinn.com';
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
+export async function POST(request: Request) {
+  try {
+    const { email, password } = await request.json();
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'Email и пароль обязательны' },
+        { status: 400 }
+      );
+    }
+
+    // Проверяем, что это единственный разрешенный пользователь
+    if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      return NextResponse.json(
+        { error: 'Неверный email или пароль' },
+        { status: 401 }
+      );
+    }
+
+    // Проверка пароля
+    let isValid = false;
+    
+    if (ADMIN_PASSWORD_HASH) {
+      // Проверяем хеш
+      isValid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    } else {
+      // Временная проверка для разработки
+      isValid = password === ADMIN_PASSWORD;
+    }
+
+    if (!isValid) {
+      return NextResponse.json(
+        { error: 'Неверный email или пароль' },
+        { status: 401 }
+      );
+    }
+
+    // Создаем сессию через cookie
+    const cookieStore = await cookies();
+    const sessionValue = email.toLowerCase();
+    
+    // Устанавливаем cookie на 30 дней
+    cookieStore.set('auth_session', sessionValue, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 дней
+      path: '/',
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Вход выполнен успешно',
+      user: {
+        email: email.toLowerCase(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Login error:', error);
+    return NextResponse.json(
+      { error: 'Ошибка сервера' },
+      { status: 500 }
+    );
+  }
+}
+
