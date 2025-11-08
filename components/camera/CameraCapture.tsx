@@ -176,8 +176,8 @@ export default function CameraCapture({ onCaptureComplete, onEditComplete }: Cam
         </div>
       )}
 
-      {/* Подсказка */}
-      {!preview && !uploading && (
+      {/* Подсказка - показываем только если редактор не открыт */}
+      {!preview && !uploading && !showEditor && (
         <div className="text-center space-y-2">
           <p className="text-[var(--matrix-green-dark)] font-mono text-xs opacity-50">
             На iPhone откроется системная камера
